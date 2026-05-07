@@ -8,6 +8,7 @@ import providersConfig from './config/providers.config';
 import { ContentModule } from './modules/content/content.module';
 import { VideoModule } from './modules/video/video.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { QueueModule } from './modules/queue/queue.module';
     ContentModule,
     VideoModule,
     QueueModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
