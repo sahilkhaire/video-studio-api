@@ -1,7 +1,21 @@
-import { Controller, Post, Body, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { VideoService, IVideoGenerationResult } from './video.service';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { VideoService } from './video.service';
+import { QueueService } from '../queue/queue.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
+import {
+  IEnqueueJobResponse,
+  IVideoJobStatusResponse,
+} from '../../domain/interfaces/video-job.interface';
 
 interface IProvidersResponse {
   script: string;
@@ -12,21 +26,45 @@ interface IProvidersResponse {
 @ApiTags('videos')
 @Controller('videos')
 export class VideoController {
-  constructor(private readonly videoService: VideoService) {}
+  constructor(
+    private readonly videoService: VideoService,
+    private readonly queueService: QueueService,
+  ) {}
 
   @Post('generate')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Generate a complete video',
+    summary: 'Enqueue a video generation job',
     description:
-      'Orchestrates script generation, AI image generation, TTS audio, and video assembly into a final MP4.',
+      'Adds a video generation job to the background queue. Returns a jobId immediately. Poll GET /videos/jobs/:jobId for status.',
   })
   @ApiBody({ type: GenerateVideoRequestDto })
-  @ApiResponse({ status: 200, description: 'Video generated successfully' })
+  @ApiResponse({ status: 202, description: 'Job enqueued — returns jobId' })
   @ApiResponse({ status: 400, description: 'Invalid request parameters' })
-  @ApiResponse({ status: 500, description: 'Video generation failed' })
-  async generateVideo(@Body() dto: GenerateVideoRequestDto): Promise<IVideoGenerationResult> {
-    return this.videoService.generateVideo(dto);
+  async enqueueVideo(@Body() dto: GenerateVideoRequestDto): Promise<IEnqueueJobResponse> {
+    return this.queueService.enqueueVideoGeneration({
+      topic: dto.topic,
+      platform: dto.platform,
+      style: dto.style,
+      targetDuration: dto.targetDuration,
+      targetAudience: dto.targetAudience,
+      additionalContext: dto.additionalContext,
+      resolution: dto.resolution,
+      fps: dto.fps,
+    });
+  }
+
+  @Get('jobs/:jobId')
+  @ApiOperation({ summary: 'Get video generation job status' })
+  @ApiParam({ name: 'jobId', description: 'UUID returned by POST /videos/generate' })
+  @ApiResponse({ status: 200, description: 'Job status returned' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  async getJobStatus(@Param('jobId') jobId: string): Promise<IVideoJobStatusResponse> {
+    const status = await this.queueService.getJobStatus(jobId);
+    if (!status) {
+      throw new NotFoundException(`Job ${jobId} not found`);
+    }
+    return status;
   }
 
   @Get('providers')
