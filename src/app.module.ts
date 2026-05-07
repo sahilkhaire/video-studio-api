@@ -9,6 +9,7 @@ import { ContentModule } from './modules/content/content.module';
 import { VideoModule } from './modules/video/video.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StorageModule } from './modules/storage/storage.module';
     VideoModule,
     QueueModule,
     StorageModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
