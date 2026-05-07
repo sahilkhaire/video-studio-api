@@ -4,12 +4,14 @@ export enum ScriptProvider {
   OPENAI = 'openai',
   CLAUDE = 'claude',
   OLLAMA = 'ollama',
+  TOGETHER_AI = 'together-ai',
 }
 
 export enum ImageProvider {
   DALLE = 'dalle',
   STABLE_DIFFUSION = 'stable-diffusion',
   LEONARDO = 'leonardo',
+  TOGETHER_AI = 'together-ai',
 }
 
 export enum TTSProvider {
@@ -66,17 +68,24 @@ export default registerAs('providers', () => ({
     apiKey: process.env.REPLICATE_API_KEY || '',
   },
 
+  // TogetherAI Configuration
+  together: {
+    apiKey: process.env.TOGETHER_API_KEY || '',
+  },
+
   // Estimated cost per API call in USD (configurable via env vars)
   costs: {
     script: {
       openai: parseFloat(process.env.COST_SCRIPT_OPENAI ?? '0.05'),
       claude: parseFloat(process.env.COST_SCRIPT_CLAUDE ?? '0.02'),
       ollama: parseFloat(process.env.COST_SCRIPT_OLLAMA ?? '0.00'),
+      'together-ai': parseFloat(process.env.COST_SCRIPT_TOGETHER ?? '0.002'),
     },
     image: {
       dalle: parseFloat(process.env.COST_IMAGE_DALLE ?? '0.04'),
       'stable-diffusion': parseFloat(process.env.COST_IMAGE_SD ?? '0.002'),
       leonardo: parseFloat(process.env.COST_IMAGE_LEONARDO ?? '0.01'),
+      'together-ai': parseFloat(process.env.COST_IMAGE_TOGETHER ?? '0.003'),
     },
     tts: {
       openai: parseFloat(process.env.COST_TTS_OPENAI ?? '0.015'),

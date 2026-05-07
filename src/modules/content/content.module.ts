@@ -6,8 +6,10 @@ import { ContentService } from './content.service';
 import { OpenAIScriptProvider } from './providers/script/openai-script.provider';
 import { ClaudeScriptProvider } from './providers/script/claude-script.provider';
 import { OllamaScriptProvider } from './providers/script/ollama-script.provider';
+import { TogetherScriptProvider } from './providers/script/together-script.provider';
 import { DALLEImageProvider } from './providers/image/dalle-image.provider';
 import { StableDiffusionImageProvider } from './providers/image/stable-diffusion-image.provider';
+import { TogetherImageProvider } from './providers/image/together-image.provider';
 import { OpenAITTSProvider } from './providers/tts/openai-tts.provider';
 import { ElevenLabsTTSProvider } from './providers/tts/elevenlabs-tts.provider';
 import { IScriptGenerator } from '../../domain/interfaces/script-generator.interface';
@@ -23,8 +25,10 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
     OpenAIScriptProvider,
     ClaudeScriptProvider,
     OllamaScriptProvider,
+    TogetherScriptProvider,
     DALLEImageProvider,
     StableDiffusionImageProvider,
+    TogetherImageProvider,
     OpenAITTSProvider,
     ElevenLabsTTSProvider,
 
@@ -36,6 +40,7 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
         openai: OpenAIScriptProvider,
         claude: ClaudeScriptProvider,
         ollama: OllamaScriptProvider,
+        together: TogetherScriptProvider,
       ): IScriptGenerator => {
         const provider = configService.get<string>(
           'providers.script.provider',
@@ -46,11 +51,13 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
             return claude;
           case ScriptProvider.OLLAMA:
             return ollama;
+          case ScriptProvider.TOGETHER_AI:
+            return together;
           default:
             return openai;
         }
       },
-      inject: [ConfigService, OpenAIScriptProvider, ClaudeScriptProvider, OllamaScriptProvider],
+      inject: [ConfigService, OpenAIScriptProvider, ClaudeScriptProvider, OllamaScriptProvider, TogetherScriptProvider],
     },
 
     // Image generator: resolved at startup based on IMAGE_PROVIDER env var
@@ -60,16 +67,19 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
         configService: ConfigService,
         dalle: DALLEImageProvider,
         sd: StableDiffusionImageProvider,
+        together: TogetherImageProvider,
       ): IImageGenerator => {
         const provider = configService.get<string>('providers.image.provider', ImageProvider.DALLE);
         switch (provider) {
           case ImageProvider.STABLE_DIFFUSION:
             return sd;
+          case ImageProvider.TOGETHER_AI:
+            return together;
           default:
             return dalle;
         }
       },
-      inject: [ConfigService, DALLEImageProvider, StableDiffusionImageProvider],
+      inject: [ConfigService, DALLEImageProvider, StableDiffusionImageProvider, TogetherImageProvider],
     },
 
     // TTS provider: resolved at startup based on TTS_PROVIDER env var
