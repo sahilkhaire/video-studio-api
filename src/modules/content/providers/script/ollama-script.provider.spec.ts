@@ -114,7 +114,9 @@ describe('OllamaScriptProvider', () => {
 
     it('should use default Ollama base URL when not configured', async () => {
       // Arrange
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: mockScriptJson } }],
@@ -131,7 +133,9 @@ describe('OllamaScriptProvider', () => {
 
     it('should assign a uuid to each scene', async () => {
       // Arrange
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: mockScriptJson } }],
@@ -153,7 +157,9 @@ describe('OllamaScriptProvider', () => {
         scenes: [{ ...JSON.parse(mockScriptJson).scenes[0], transition: 'spin' }],
       });
 
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: scriptWithBadTransition } }],
@@ -168,7 +174,9 @@ describe('OllamaScriptProvider', () => {
 
     it('should throw ScriptGenerationException when response content is null', async () => {
       // Arrange
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: null } }],
@@ -182,7 +190,9 @@ describe('OllamaScriptProvider', () => {
 
     it('should throw ScriptGenerationException when no JSON found in response', async () => {
       // Arrange
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: 'I cannot generate that content.' } }],
@@ -196,7 +206,9 @@ describe('OllamaScriptProvider', () => {
 
     it('should throw ScriptGenerationException when API call fails', async () => {
       // Arrange
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockRejectedValueOnce(new Error('Connection refused'));
 
@@ -214,7 +226,9 @@ describe('OllamaScriptProvider', () => {
         targetDuration: 60,
       };
 
-      (configService.get as jest.Mock).mockImplementation((_key: string, defaultVal?: string) => defaultVal);
+      (configService.get as jest.Mock).mockImplementation(
+        (_key: string, defaultVal?: string) => defaultVal,
+      );
 
       mockCreate.mockResolvedValueOnce({
         choices: [{ message: { content: mockScriptJson } }],

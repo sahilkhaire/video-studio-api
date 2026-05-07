@@ -59,7 +59,13 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
             return openai;
         }
       },
-      inject: [ConfigService, OpenAIScriptProvider, ClaudeScriptProvider, OllamaScriptProvider, TogetherScriptProvider],
+      inject: [
+        ConfigService,
+        OpenAIScriptProvider,
+        ClaudeScriptProvider,
+        OllamaScriptProvider,
+        TogetherScriptProvider,
+      ],
     },
 
     // Image generator: resolved at startup based on IMAGE_PROVIDER env var
@@ -81,7 +87,12 @@ import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/provide
             return dalle;
         }
       },
-      inject: [ConfigService, DALLEImageProvider, StableDiffusionImageProvider, TogetherImageProvider],
+      inject: [
+        ConfigService,
+        DALLEImageProvider,
+        StableDiffusionImageProvider,
+        TogetherImageProvider,
+      ],
     },
 
     // TTS provider: resolved at startup based on TTS_PROVIDER env var

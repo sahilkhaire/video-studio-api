@@ -31,12 +31,18 @@ export class OpenAITTSProvider implements ITTSProvider {
 
   getVoices(): Promise<ITTSVoice[]> {
     return Promise.resolve([
-      { id: 'alloy',   name: 'Alloy',   locale: 'en-US', language: 'English (US)', gender: 'Unknown' },
-      { id: 'echo',    name: 'Echo',    locale: 'en-US', language: 'English (US)', gender: 'Male'    },
-      { id: 'fable',   name: 'Fable',   locale: 'en-US', language: 'English (US)', gender: 'Male'    },
-      { id: 'onyx',    name: 'Onyx',    locale: 'en-US', language: 'English (US)', gender: 'Male'    },
-      { id: 'nova',    name: 'Nova',    locale: 'en-US', language: 'English (US)', gender: 'Female'  },
-      { id: 'shimmer', name: 'Shimmer', locale: 'en-US', language: 'English (US)', gender: 'Female'  },
+      { id: 'alloy', name: 'Alloy', locale: 'en-US', language: 'English (US)', gender: 'Unknown' },
+      { id: 'echo', name: 'Echo', locale: 'en-US', language: 'English (US)', gender: 'Male' },
+      { id: 'fable', name: 'Fable', locale: 'en-US', language: 'English (US)', gender: 'Male' },
+      { id: 'onyx', name: 'Onyx', locale: 'en-US', language: 'English (US)', gender: 'Male' },
+      { id: 'nova', name: 'Nova', locale: 'en-US', language: 'English (US)', gender: 'Female' },
+      {
+        id: 'shimmer',
+        name: 'Shimmer',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Female',
+      },
     ]);
   }
 

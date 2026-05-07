@@ -71,7 +71,11 @@ export class VideoService {
     );
 
     // Step 1: Generate script + all AI content (images & audio per scene)
-    const content = await this.contentService.generateVideoContent(request, request.voice);
+    const content = await this.contentService.generateVideoContent(
+      request,
+      request.voice,
+      aspectRatio,
+    );
 
     this.logger.log(
       `Content ready — script: "${content.script.title}", ${content.sceneAssets.length} scenes generated`,

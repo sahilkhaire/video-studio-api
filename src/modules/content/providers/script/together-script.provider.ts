@@ -42,7 +42,9 @@ export class TogetherScriptProvider implements IScriptGenerator {
   }
 
   async generateScript(request: GenerateScriptRequestDto): Promise<IVideoScript> {
-    this.logger.log(`Generating script via TogetherAI for topic: "${request.topic}" on ${request.platform}`);
+    this.logger.log(
+      `Generating script via TogetherAI for topic: "${request.topic}" on ${request.platform}`,
+    );
 
     const client = this.getClient();
     const model = this.configService.get<string>('providers.script.model', DEFAULT_MODEL);
@@ -59,12 +61,18 @@ export class TogetherScriptProvider implements IScriptGenerator {
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        throw new ScriptGenerationException('together-ai', new Error('Empty response from TogetherAI'));
+        throw new ScriptGenerationException(
+          'together-ai',
+          new Error('Empty response from TogetherAI'),
+        );
       }
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new ScriptGenerationException('together-ai', new Error('No JSON found in TogetherAI response'));
+        throw new ScriptGenerationException(
+          'together-ai',
+          new Error('No JSON found in TogetherAI response'),
+        );
       }
 
       return this.parseScriptResponse(jsonMatch[0], request);

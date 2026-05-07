@@ -6,10 +6,16 @@ import {
   IImageGenerator,
   IGeneratedImage,
 } from '../../domain/interfaces/image-generator.interface';
-import { ITTSProvider, ITTSVoice, IGeneratedAudio } from '../../domain/interfaces/tts-provider.interface';
+import {
+  ITTSProvider,
+  ITTSVoice,
+  IGeneratedAudio,
+} from '../../domain/interfaces/tts-provider.interface';
 import { GenerateScriptRequestDto } from '../../domain/dto/generate-script.dto';
 import { GenerateImageRequestDto } from '../../domain/dto/generate-image.dto';
 import { GenerateAudioRequestDto } from '../../domain/dto/generate-audio.dto';
+import { ImageSize } from '../../domain/enums/video.enums';
+import { VideoAspectRatio } from '../../domain/interfaces/rendering.interface';
 import { SCRIPT_GENERATOR, IMAGE_GENERATOR, TTS_PROVIDER } from './constants/injection-tokens';
 import { CostTrackingService } from '../cost/cost-tracking.service';
 import { ContentType } from '../../domain/interfaces/cost-tracking.interface';
@@ -173,16 +179,29 @@ export class ContentService {
    * Scenes are processed in parallel. Failures on individual scenes are captured
    * and flagged rather than failing the entire job.
    */
-  async generateVideoContent(request: GenerateScriptRequestDto, voice?: string): Promise<IGeneratedContent> {
+  async generateVideoContent(
+    request: GenerateScriptRequestDto,
+    voice?: string,
+    aspectRatio: VideoAspectRatio = VideoAspectRatio.LANDSCAPE_16_9,
+  ): Promise<IGeneratedContent> {
     this.logger.log(`Starting video content generation for: "${request.topic}"`);
 
     const script = await this.generateScript(request);
     this.logger.log(`Script generated: "${script.title}" with ${script.scenes.length} scenes`);
 
-    const maxConcurrentScenes = Math.max(1, this.configService.get<number>('video.queue.concurrency', 2));
+    const maxConcurrentScenes = Math.max(
+      1,
+      this.configService.get<number>('video.queue.concurrency', 2),
+    );
     this.logger.log(`Generating scene assets with concurrency ${maxConcurrentScenes}`);
 
-    const sceneAssets = await this.generateSceneAssetsWithConcurrency(script, maxConcurrentScenes, voice);
+    const imageSize = this.getImageSizeForAspectRatio(aspectRatio);
+    const sceneAssets = await this.generateSceneAssetsWithConcurrency(
+      script,
+      maxConcurrentScenes,
+      voice,
+      imageSize,
+    );
 
     this.logger.log(`Content generation complete for: "${script.title}"`);
 
@@ -202,9 +221,10 @@ export class ContentService {
     imageDescription: string,
     narration: string,
     voice?: string,
+    imageSize?: ImageSize,
   ): Promise<ISceneAssets> {
     const [imageResult, audioResult] = await Promise.allSettled([
-      this.generateImage({ prompt: imageDescription }),
+      this.generateImage({ prompt: imageDescription, size: imageSize }),
       this.generateAudio({ text: narration, voice }),
     ]);
 
@@ -235,6 +255,7 @@ export class ContentService {
     script: IVideoScript,
     maxConcurrentScenes: number,
     voice?: string,
+    imageSize?: ImageSize,
   ): Promise<ISceneAssets[]> {
     const results: ISceneAssets[] = new Array(script.scenes.length);
     let cursor = 0;
@@ -255,6 +276,7 @@ export class ContentService {
           scene.imageDescription,
           scene.narration,
           voice,
+          imageSize,
         );
       }
     };
@@ -287,6 +309,18 @@ export class ContentService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  private getImageSizeForAspectRatio(aspectRatio: VideoAspectRatio): ImageSize {
+    switch (aspectRatio) {
+      case VideoAspectRatio.PORTRAIT_9_16:
+        return ImageSize.PORTRAIT;
+      case VideoAspectRatio.LANDSCAPE_16_9:
+        return ImageSize.LANDSCAPE;
+      case VideoAspectRatio.SQUARE_1_1:
+      default:
+        return ImageSize.SQUARE;
     }
   }
 }

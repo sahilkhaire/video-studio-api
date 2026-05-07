@@ -103,7 +103,11 @@ describe('ElevenLabsTTSProvider', () => {
       await provider.generateAudio(validRequest);
 
       // Assert
-      const [url, _body, config] = axios.post.mock.calls[0] as [string, unknown, { headers: Record<string, string> }];
+      const [url, _body, config] = axios.post.mock.calls[0] as [
+        string,
+        unknown,
+        { headers: Record<string, string> },
+      ];
       expect(url).toContain('elevenlabs.io');
       expect(config.headers['xi-api-key']).toBe('el_test_key');
       expect(config.headers['Accept']).toBe('audio/mpeg');
@@ -165,9 +169,7 @@ describe('ElevenLabsTTSProvider', () => {
       axios.post.mockRejectedValueOnce(new Error('API quota exceeded'));
 
       // Act & Assert
-      await expect(provider.generateAudio(validRequest)).rejects.toThrow(
-        AudioGenerationException,
-      );
+      await expect(provider.generateAudio(validRequest)).rejects.toThrow(AudioGenerationException);
     });
 
     it('should generate a temp output path when none is provided', async () => {

@@ -73,7 +73,11 @@ describe('StableDiffusionImageProvider', () => {
 
       // Second call: poll → succeeded
       axios.get.mockResolvedValueOnce({
-        data: { id: 'pred-123', status: 'succeeded', output: ['https://cdn.replicate.com/image.png'] },
+        data: {
+          id: 'pred-123',
+          status: 'succeeded',
+          output: ['https://cdn.replicate.com/image.png'],
+        },
       });
 
       // Act
@@ -135,9 +139,7 @@ describe('StableDiffusionImageProvider', () => {
       });
 
       // Act & Assert
-      await expect(provider.generateImage(validRequest)).rejects.toThrow(
-        ImageGenerationException,
-      );
+      await expect(provider.generateImage(validRequest)).rejects.toThrow(ImageGenerationException);
     });
 
     it('should throw ImageGenerationException when HTTP request fails', async () => {
@@ -150,9 +152,7 @@ describe('StableDiffusionImageProvider', () => {
       axios.post.mockRejectedValueOnce(new Error('Network timeout'));
 
       // Act & Assert
-      await expect(provider.generateImage(validRequest)).rejects.toThrow(
-        ImageGenerationException,
-      );
+      await expect(provider.generateImage(validRequest)).rejects.toThrow(ImageGenerationException);
     });
 
     it('should use default SQUARE size when size is not specified', async () => {

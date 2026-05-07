@@ -32,15 +32,69 @@ export class ElevenLabsTTSProvider implements ITTSProvider {
 
   getVoices(): Promise<ITTSVoice[]> {
     return Promise.resolve([
-      { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel',  locale: 'en-US', language: 'English (US)', gender: 'Female' },
-      { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi',    locale: 'en-US', language: 'English (US)', gender: 'Female' },
-      { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella',   locale: 'en-US', language: 'English (US)', gender: 'Female' },
-      { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni',  locale: 'en-US', language: 'English (US)', gender: 'Male'   },
-      { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli',    locale: 'en-US', language: 'English (US)', gender: 'Female' },
-      { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh',    locale: 'en-US', language: 'English (US)', gender: 'Male'   },
-      { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold',  locale: 'en-US', language: 'English (US)', gender: 'Male'   },
-      { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam',    locale: 'en-US', language: 'English (US)', gender: 'Male'   },
-      { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam',     locale: 'en-US', language: 'English (US)', gender: 'Male'   },
+      {
+        id: '21m00Tcm4TlvDq8ikWAM',
+        name: 'Rachel',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Female',
+      },
+      {
+        id: 'AZnzlk1XvdvUeBnXmlld',
+        name: 'Domi',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Female',
+      },
+      {
+        id: 'EXAVITQu4vr4xnSDxMaL',
+        name: 'Bella',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Female',
+      },
+      {
+        id: 'ErXwobaYiN019PkySvjV',
+        name: 'Antoni',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Male',
+      },
+      {
+        id: 'MF3mGyEYCl7XYWbV9V6O',
+        name: 'Elli',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Female',
+      },
+      {
+        id: 'TxGEqnHWrfWFTfGW9XjX',
+        name: 'Josh',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Male',
+      },
+      {
+        id: 'VR6AewLTigWG4xSOukaG',
+        name: 'Arnold',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Male',
+      },
+      {
+        id: 'pNInz6obpgDQGcFmaJgB',
+        name: 'Adam',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Male',
+      },
+      {
+        id: 'yoZ06aMxZJJ28mfd3POQ',
+        name: 'Sam',
+        locale: 'en-US',
+        language: 'English (US)',
+        gender: 'Male',
+      },
     ]);
   }
 

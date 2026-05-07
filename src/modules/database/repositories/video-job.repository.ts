@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { VideoJob, VideoJobDocument } from '../schemas/video-job.schema';
-import { VideoJobStatus, IVideoJobData, IVideoJobResult } from '../../../domain/interfaces/video-job.interface';
+import {
+  VideoJobStatus,
+  IVideoJobData,
+  IVideoJobResult,
+} from '../../../domain/interfaces/video-job.interface';
 
 @Injectable()
 export class VideoJobRepository {

@@ -20,8 +20,9 @@ export interface IComposeFrameOptions {
 }
 
 const SUBTITLE_FONT_SIZE_RATIO = 0.035; // relative to canvas height
+const SUBTITLE_FONT_SIZE_RATIO_PORTRAIT = 0.03;
 const SUBTITLE_PADDING_RATIO = 0.02;
-const SUBTITLE_MAX_CHARS_PER_LINE = 60;
+const SUBTITLE_BOTTOM_SAFE_AREA_RATIO_PORTRAIT = 0.08;
 
 @Injectable()
 export class FrameComposerService {
@@ -118,21 +119,32 @@ export class FrameComposerService {
   ): void {
     if (!narration.trim()) return;
 
-    const fontSize = Math.round(height * SUBTITLE_FONT_SIZE_RATIO);
+    const isPortrait = height > width;
+    const baseFontRatio = isPortrait ? SUBTITLE_FONT_SIZE_RATIO_PORTRAIT : SUBTITLE_FONT_SIZE_RATIO;
+    let fontSize = Math.round(height * baseFontRatio);
     const padding = Math.round(height * SUBTITLE_PADDING_RATIO);
-    const lines = this.wrapText(narration, SUBTITLE_MAX_CHARS_PER_LINE);
+    const blockX = width * 0.05;
+    const blockWidth = width * 0.9;
+    const maxTextWidth = Math.max(120, blockWidth - padding * 2);
 
-    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    let lines = this.wrapText(ctx, narration, maxTextWidth);
+    while (lines.length > 3 && fontSize > 18) {
+      fontSize -= 2;
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      lines = this.wrapText(ctx, narration, maxTextWidth);
+    }
 
     const lineHeight = fontSize * 1.4;
     const blockHeight = lines.length * lineHeight + padding * 2;
-    const blockY = height - blockHeight - padding;
+    const bottomSafeArea = isPortrait
+      ? Math.round(height * SUBTITLE_BOTTOM_SAFE_AREA_RATIO_PORTRAIT)
+      : padding;
+    const blockY = height - blockHeight - bottomSafeArea;
 
     // Semi-transparent background pill
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    const blockX = width * 0.05;
-    const blockWidth = width * 0.9;
     const radius = padding;
     this.drawRoundedRect(ctx, blockX, blockY, blockWidth, blockHeight, radius);
     ctx.fill();
@@ -149,14 +161,14 @@ export class FrameComposerService {
     ctx.shadowBlur = 0;
   }
 
-  private wrapText(text: string, maxCharsPerLine: number): string[] {
+  private wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
 
     for (const word of words) {
       const candidate = currentLine ? `${currentLine} ${word}` : word;
-      if (candidate.length > maxCharsPerLine && currentLine) {
+      if (ctx.measureText(candidate).width > maxWidth && currentLine) {
         lines.push(currentLine);
         currentLine = word;
       } else {

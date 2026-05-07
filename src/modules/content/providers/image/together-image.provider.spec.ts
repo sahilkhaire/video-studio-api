@@ -168,9 +168,7 @@ describe('TogetherImageProvider', () => {
       mockGenerate.mockResolvedValueOnce({ data: [{}] });
 
       // Act & Assert
-      await expect(provider.generateImage(validRequest)).rejects.toThrow(
-        ImageGenerationException,
-      );
+      await expect(provider.generateImage(validRequest)).rejects.toThrow(ImageGenerationException);
     });
 
     it('should throw ImageGenerationException when API call fails', async () => {
@@ -179,9 +177,7 @@ describe('TogetherImageProvider', () => {
       mockGenerate.mockRejectedValueOnce(new Error('Model unavailable'));
 
       // Act & Assert
-      await expect(provider.generateImage(validRequest)).rejects.toThrow(
-        ImageGenerationException,
-      );
+      await expect(provider.generateImage(validRequest)).rejects.toThrow(ImageGenerationException);
     });
 
     it('should reuse the same OpenAI client on repeated calls', async () => {

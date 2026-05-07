@@ -14,7 +14,9 @@ jest.mock('@aws-sdk/client-s3', () => ({
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: jest
     .fn()
-    .mockResolvedValue('https://abc123.r2.cloudflarestorage.com/test-bucket/videos/test.mp4?signed=1'),
+    .mockResolvedValue(
+      'https://abc123.r2.cloudflarestorage.com/test-bucket/videos/test.mp4?signed=1',
+    ),
 }));
 
 jest.mock('fs', () => ({

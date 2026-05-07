@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CostRecord, CostRecordDocument } from '../schemas/cost-record.schema';
-import { IProviderCallRecord, ContentType } from '../../../domain/interfaces/cost-tracking.interface';
+import {
+  IProviderCallRecord,
+  ContentType,
+} from '../../../domain/interfaces/cost-tracking.interface';
 
 @Injectable()
 export class CostRecordRepository {
@@ -32,7 +35,10 @@ export class CostRecordRepository {
   }
 
   async findSince(since: Date): Promise<CostRecordDocument[]> {
-    return this.model.find({ timestamp: { $gte: since } }).sort({ timestamp: -1 }).exec();
+    return this.model
+      .find({ timestamp: { $gte: since } })
+      .sort({ timestamp: -1 })
+      .exec();
   }
 
   async findByProvider(provider: string): Promise<CostRecordDocument[]> {

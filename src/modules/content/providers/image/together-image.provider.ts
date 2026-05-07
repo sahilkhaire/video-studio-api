@@ -36,7 +36,10 @@ export class TogetherImageProvider implements IImageGenerator {
       this.configService.get<string>('providers.image.model', DEFAULT_MODEL),
     );
     const candidateModels = this.buildCandidateModels(configuredModel);
-    const maxAttempts = Math.max(1, this.configService.get<number>('providers.together.maxAttempts', 3));
+    const maxAttempts = Math.max(
+      1,
+      this.configService.get<number>('providers.together.maxAttempts', 3),
+    );
     const size = request.size ?? ImageSize.SQUARE;
     const prompt = this.buildPrompt(request);
     const [width, height] = this.parseDimensions(size);
@@ -52,7 +55,7 @@ export class TogetherImageProvider implements IImageGenerator {
             n: 1,
             response_format: 'b64_json',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ...(({ width, height } as any)),
+            ...({ width, height } as any),
           });
 
           const imageData = response.data ?? [];

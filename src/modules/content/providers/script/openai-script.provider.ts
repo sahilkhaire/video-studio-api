@@ -61,7 +61,10 @@ export class OpenAIScriptProvider implements IScriptGenerator {
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new ScriptGenerationException('openai', new Error('No JSON found in OpenAI response'));
+        throw new ScriptGenerationException(
+          'openai',
+          new Error('No JSON found in OpenAI response'),
+        );
       }
 
       return this.parseScriptResponse(jsonMatch[0], request);
