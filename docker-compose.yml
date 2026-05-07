@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: video-gen-app
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./storage:/app/storage
+      - ./temp:/app/temp
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - video-gen-network
+    command: npm run start:dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: video-gen-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - video-gen-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: video-gen-postgres
+    environment:
+      POSTGRES_DB: video_generation
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - video-gen-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Optional: Bull Board for queue monitoring
+  bull-board:
+    image: deadly0/bull-board
+    container_name: video-gen-bull-board
+    ports:
+      - '3001:3000'
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+    networks:
+      - video-gen-network
+
+networks:
+  video-gen-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
