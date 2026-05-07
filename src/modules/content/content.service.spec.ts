@@ -9,6 +9,8 @@ import {
 } from '../../domain/interfaces/image-generator.interface';
 import { ITTSProvider, IGeneratedAudio } from '../../domain/interfaces/tts-provider.interface';
 import { CostTrackingService } from '../cost/cost-tracking.service';
+import { CacheKeyService } from '../cache/cache-key.service';
+import { ContentCacheService } from '../cache/content-cache.service';
 import { GenerateScriptRequestDto } from '../../domain/dto/generate-script.dto';
 import {
   VideoPlatform,
@@ -79,6 +81,18 @@ describe('ContentService', () => {
     reset: jest.fn(),
   };
 
+  const mockCacheKeyService = {
+    forScript: jest.fn().mockReturnValue('script:abc'),
+    forImage: jest.fn().mockReturnValue('image:abc'),
+    forAudio: jest.fn().mockReturnValue('audio:abc'),
+  };
+
+  const mockContentCacheService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -105,6 +119,8 @@ describe('ContentService', () => {
         { provide: TTS_PROVIDER, useValue: mockTtsProvider },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: CostTrackingService, useValue: mockCostTrackingService },
+        { provide: CacheKeyService, useValue: mockCacheKeyService },
+        { provide: ContentCacheService, useValue: mockContentCacheService },
       ],
     }).compile();
 
@@ -126,7 +142,7 @@ describe('ContentService', () => {
   });
 
   describe('generateScript', () => {
-    it('should delegate to scriptGenerator', async () => {
+    it('should delegate to scriptGenerator on cache miss', async () => {
       // Arrange
       const request: GenerateScriptRequestDto = {
         topic: 'How photosynthesis works in plants',
@@ -134,6 +150,7 @@ describe('ContentService', () => {
         targetDuration: 30,
       };
       const mockScript = buildMockScript();
+      mockContentCacheService.get.mockResolvedValueOnce(null);
       mockScriptGenerator.generateScript.mockResolvedValueOnce(mockScript);
 
       // Act
@@ -142,6 +159,47 @@ describe('ContentService', () => {
       // Assert
       expect(result).toBe(mockScript);
       expect(mockScriptGenerator.generateScript).toHaveBeenCalledWith(request);
+    });
+
+    it('should return cached script without calling provider', async () => {
+      // Arrange
+      const request: GenerateScriptRequestDto = {
+        topic: 'Cached topic',
+        platform: VideoPlatform.YOUTUBE,
+        targetDuration: 30,
+      };
+      const cachedScript = buildMockScript();
+      mockContentCacheService.get.mockResolvedValueOnce(cachedScript);
+
+      // Act
+      const result = await service.generateScript(request);
+
+      // Assert
+      expect(result).toBe(cachedScript);
+      expect(mockScriptGenerator.generateScript).not.toHaveBeenCalled();
+      expect(mockCostTrackingService.recordCall).not.toHaveBeenCalled();
+    });
+
+    it('should store result in cache after provider call', async () => {
+      // Arrange
+      const request: GenerateScriptRequestDto = {
+        topic: 'New topic',
+        platform: VideoPlatform.YOUTUBE,
+        targetDuration: 30,
+      };
+      const mockScript = buildMockScript();
+      mockContentCacheService.get.mockResolvedValueOnce(null);
+      mockScriptGenerator.generateScript.mockResolvedValueOnce(mockScript);
+
+      // Act
+      await service.generateScript(request);
+
+      // Assert
+      expect(mockContentCacheService.set).toHaveBeenCalledWith(
+        'script:abc',
+        mockScript,
+        expect.any(Number),
+      );
     });
   });
 

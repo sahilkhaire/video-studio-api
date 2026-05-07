@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CostModule } from '../cost/cost.module';
+import { CacheModule } from '../cache/cache.module';
 import { ContentService } from './content.service';
 import { OpenAIScriptProvider } from './providers/script/openai-script.provider';
 import { ClaudeScriptProvider } from './providers/script/claude-script.provider';
@@ -16,7 +17,7 @@ import { SCRIPT_GENERATOR, IMAGE_GENERATOR, TTS_PROVIDER } from './constants/inj
 import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/providers.config';
 
 @Module({
-  imports: [ConfigModule, CostModule],
+  imports: [ConfigModule, CostModule, CacheModule],
   providers: [
     // Concrete provider implementations
     OpenAIScriptProvider,

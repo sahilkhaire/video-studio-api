@@ -12,6 +12,8 @@ import { GenerateAudioRequestDto } from '../../domain/dto/generate-audio.dto';
 import { SCRIPT_GENERATOR, IMAGE_GENERATOR, TTS_PROVIDER } from './constants/injection-tokens';
 import { CostTrackingService } from '../cost/cost-tracking.service';
 import { ContentType } from '../../domain/interfaces/cost-tracking.interface';
+import { CacheKeyService } from '../cache/cache-key.service';
+import { ContentCacheService } from '../cache/content-cache.service';
 
 export interface ISceneAssets {
   sceneId: string;
@@ -41,6 +43,8 @@ export class ContentService {
     @Inject(TTS_PROVIDER) private readonly ttsProvider: ITTSProvider,
     private readonly configService: ConfigService,
     private readonly costTrackingService: CostTrackingService,
+    private readonly cacheKeyService: CacheKeyService,
+    private readonly contentCacheService: ContentCacheService,
   ) {}
 
   private lookupCostRate(contentType: ContentType, providerName: string): number {
@@ -49,6 +53,13 @@ export class ContentService {
   }
 
   async generateScript(request: GenerateScriptRequestDto): Promise<IVideoScript> {
+    const cacheKey = this.cacheKeyService.forScript(request);
+    const cached = await this.contentCacheService.get<IVideoScript>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Script cache hit: ${cacheKey}`);
+      return cached;
+    }
+
     const start = Date.now();
     const providerName = this.scriptGenerator.getProviderName();
     try {
@@ -61,6 +72,8 @@ export class ContentService {
         success: true,
         timestamp: new Date(),
       });
+      const ttl = this.configService.get<number>('video.cache.ttlScripts', 2592000);
+      await this.contentCacheService.set(cacheKey, result, ttl);
       return result;
     } catch (error) {
       this.costTrackingService.recordCall({
@@ -76,6 +89,13 @@ export class ContentService {
   }
 
   async generateImage(request: GenerateImageRequestDto): Promise<IGeneratedImage> {
+    const cacheKey = this.cacheKeyService.forImage(request);
+    const cached = await this.contentCacheService.get<IGeneratedImage>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Image cache hit: ${cacheKey}`);
+      return cached;
+    }
+
     const start = Date.now();
     const providerName = this.imageGenerator.getProviderName();
     try {
@@ -88,6 +108,8 @@ export class ContentService {
         success: true,
         timestamp: new Date(),
       });
+      const ttl = this.configService.get<number>('video.cache.ttlImages', 604800);
+      await this.contentCacheService.set(cacheKey, result, ttl);
       return result;
     } catch (error) {
       this.costTrackingService.recordCall({
@@ -103,6 +125,13 @@ export class ContentService {
   }
 
   async generateAudio(request: GenerateAudioRequestDto): Promise<IGeneratedAudio> {
+    const cacheKey = this.cacheKeyService.forAudio(request);
+    const cached = await this.contentCacheService.get<IGeneratedAudio>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Audio cache hit: ${cacheKey}`);
+      return cached;
+    }
+
     const start = Date.now();
     const providerName = this.ttsProvider.getProviderName();
     try {
@@ -115,6 +144,8 @@ export class ContentService {
         success: true,
         timestamp: new Date(),
       });
+      const ttl = this.configService.get<number>('video.cache.ttlAudio', 604800);
+      await this.contentCacheService.set(cacheKey, result, ttl);
       return result;
     } catch (error) {
       this.costTrackingService.recordCall({

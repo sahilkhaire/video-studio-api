@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { VideoService } from './video.service';
 import { QueueService } from '../queue/queue.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
@@ -33,6 +34,7 @@ export class VideoController {
 
   @Post('generate')
   @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({
     summary: 'Enqueue a video generation job',
     description:

@@ -56,6 +56,7 @@ async function bootstrap(): Promise<void> {
       .setVersion('0.1.0')
       .addTag('videos', 'Video generation operations')
       .addTag('health', 'Health check endpoints')
+      .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
       .addBearerAuth()
       .build();
 

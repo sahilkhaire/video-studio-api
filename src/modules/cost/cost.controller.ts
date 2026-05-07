@@ -1,9 +1,11 @@
 import { Controller, Delete, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../common/decorators/public.decorator';
 import { ICostSummary } from '../../domain/interfaces/cost-tracking.interface';
 import { CostTrackingService } from './cost-tracking.service';
 
 @ApiTags('costs')
+@Public()
 @Controller('costs')
 export class CostController {
   constructor(private readonly costTrackingService: CostTrackingService) {}
