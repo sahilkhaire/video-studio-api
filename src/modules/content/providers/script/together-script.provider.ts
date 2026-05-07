@@ -50,7 +50,6 @@ export class TogetherScriptProvider implements IScriptGenerator {
     try {
       const response = await client.chat.completions.create({
         model,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: this.getSystemPrompt() },
           { role: 'user', content: this.buildUserPrompt(request) },
@@ -63,7 +62,12 @@ export class TogetherScriptProvider implements IScriptGenerator {
         throw new ScriptGenerationException('together-ai', new Error('Empty response from TogetherAI'));
       }
 
-      return this.parseScriptResponse(content, request);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new ScriptGenerationException('together-ai', new Error('No JSON found in TogetherAI response'));
+      }
+
+      return this.parseScriptResponse(jsonMatch[0], request);
     } catch (error) {
       if (error instanceof ScriptGenerationException) throw error;
       this.logger.error('TogetherAI script generation failed', error);

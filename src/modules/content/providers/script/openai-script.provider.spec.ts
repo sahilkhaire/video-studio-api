@@ -197,6 +197,23 @@ describe('OpenAIScriptProvider', () => {
       );
     });
 
+    it('should throw ScriptGenerationException when response contains no JSON', async () => {
+      // Arrange
+      (configService.get as jest.Mock).mockImplementation((key: string, defaultVal?: string) => {
+        if (key === 'providers.openai.apiKey') return 'sk-test-key';
+        return defaultVal;
+      });
+
+      mockCreate.mockResolvedValueOnce({
+        choices: [{ message: { content: 'Sorry, I cannot help with that.' } }],
+      });
+
+      // Act & Assert
+      await expect(provider.generateScript(validRequest)).rejects.toThrow(
+        ScriptGenerationException,
+      );
+    });
+
     it('should throw ScriptGenerationException when API call fails', async () => {
       // Arrange
       (configService.get as jest.Mock).mockImplementation((key: string, defaultVal?: string) => {

@@ -47,7 +47,6 @@ export class OpenAIScriptProvider implements IScriptGenerator {
     try {
       const response = await client.chat.completions.create({
         model,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: this.getSystemPrompt() },
           { role: 'user', content: this.buildUserPrompt(request) },
@@ -60,7 +59,12 @@ export class OpenAIScriptProvider implements IScriptGenerator {
         throw new ScriptGenerationException('openai', new Error('Empty response from OpenAI'));
       }
 
-      return this.parseScriptResponse(content, request);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new ScriptGenerationException('openai', new Error('No JSON found in OpenAI response'));
+      }
+
+      return this.parseScriptResponse(jsonMatch[0], request);
     } catch (error) {
       if (error instanceof ScriptGenerationException) throw error;
       this.logger.error('OpenAI script generation failed', error);

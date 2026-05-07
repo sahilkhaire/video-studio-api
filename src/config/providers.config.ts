@@ -25,7 +25,7 @@ export default registerAs('providers', () => ({
   // Script Generation Provider
   script: {
     provider: (process.env.SCRIPT_PROVIDER as ScriptProvider) || ScriptProvider.OPENAI,
-    model: process.env.SCRIPT_MODEL || 'gpt-4',
+    model: process.env.SCRIPT_MODEL || 'gpt-4o',
   },
 
   // Image Generation Provider
