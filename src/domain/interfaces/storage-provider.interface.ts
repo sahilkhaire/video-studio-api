@@ -4,6 +4,8 @@
 export enum StorageProviderType {
   LOCAL = 'local',
   S3 = 's3',
+  CLOUDFLARE_R2 = 'cloudflare_r2',
+  ORACLE_S3 = 'oracle_s3',
 }
 
 // ──────────────────────────────────────────────────────────
