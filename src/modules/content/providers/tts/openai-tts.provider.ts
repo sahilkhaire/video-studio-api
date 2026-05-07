@@ -6,6 +6,7 @@ import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ITTSProvider,
+  ITTSVoice,
   IGeneratedAudio,
 } from '../../../../domain/interfaces/tts-provider.interface';
 import { GenerateAudioRequestDto } from '../../../../domain/dto/generate-audio.dto';
@@ -26,6 +27,17 @@ export class OpenAITTSProvider implements ITTSProvider {
 
   getProviderName(): string {
     return 'openai';
+  }
+
+  getVoices(): Promise<ITTSVoice[]> {
+    return Promise.resolve([
+      { id: 'alloy',   name: 'Alloy',   locale: 'en-US', language: 'English (US)', gender: 'Unknown' },
+      { id: 'echo',    name: 'Echo',    locale: 'en-US', language: 'English (US)', gender: 'Male'    },
+      { id: 'fable',   name: 'Fable',   locale: 'en-US', language: 'English (US)', gender: 'Male'    },
+      { id: 'onyx',    name: 'Onyx',    locale: 'en-US', language: 'English (US)', gender: 'Male'    },
+      { id: 'nova',    name: 'Nova',    locale: 'en-US', language: 'English (US)', gender: 'Female'  },
+      { id: 'shimmer', name: 'Shimmer', locale: 'en-US', language: 'English (US)', gender: 'Female'  },
+    ]);
   }
 
   async generateAudio(request: GenerateAudioRequestDto): Promise<IGeneratedAudio> {

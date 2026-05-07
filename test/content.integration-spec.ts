@@ -100,6 +100,7 @@ describe('ContentService Integration', () => {
     };
     mockTtsProvider = {
       generateAudio: jest.fn().mockResolvedValue(buildAudio()),
+      getVoices: jest.fn().mockResolvedValue([]),
       getProviderName: jest.fn().mockReturnValue('openai'),
     };
 

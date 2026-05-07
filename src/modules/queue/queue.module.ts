@@ -5,9 +5,10 @@ import { VideoModule } from '../video/video.module';
 import { QueueService } from './queue.service';
 import { VideoProcessor } from './video.processor';
 import { VIDEO_QUEUE_NAME, VIDEO_QUEUE_TOKEN } from './constants/queue.constants';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
-  imports: [ConfigModule, forwardRef(() => VideoModule)],
+  imports: [ConfigModule, DatabaseModule, forwardRef(() => VideoModule)],
   providers: [
     {
       provide: VIDEO_QUEUE_TOKEN,

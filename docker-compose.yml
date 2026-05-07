@@ -18,7 +18,7 @@ services:
       - .env
     depends_on:
       - redis
-      - postgres
+      - mongodb
     networks:
       - video-gen-network
     command: npm run start:dev
@@ -38,21 +38,19 @@ services:
       timeout: 3s
       retries: 3
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: video-gen-postgres
+  mongodb:
+    image: mongo:7-jammy
+    container_name: video-gen-mongodb
     environment:
-      POSTGRES_DB: video_generation
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MONGO_INITDB_DATABASE: video_generation
     ports:
-      - '5432:5432'
+      - '27017:27017'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - mongodb-data:/data/db
     networks:
       - video-gen-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
       interval: 10s
       timeout: 3s
       retries: 3
@@ -77,4 +75,4 @@ networks:
 
 volumes:
   redis-data:
-  postgres-data:
+  mongodb-data:

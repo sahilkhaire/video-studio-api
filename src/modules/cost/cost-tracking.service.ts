@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ContentType,
@@ -6,15 +6,23 @@ import {
   IProviderCallRecord,
   IProviderCostSummary,
 } from '../../domain/interfaces/cost-tracking.interface';
+import { CostRecordRepository } from '../database/repositories/cost-record.repository';
 
 @Injectable()
 export class CostTrackingService {
+  private readonly logger = new Logger(CostTrackingService.name);
   private readonly records: IProviderCallRecord[] = [];
   private readonly trackedSince = new Date();
+
+  constructor(private readonly costRecordRepository: CostRecordRepository) {}
 
   recordCall(record: Omit<IProviderCallRecord, 'id'>): IProviderCallRecord {
     const full: IProviderCallRecord = { ...record, id: uuidv4() };
     this.records.push(full);
+    // Persist async — do not block the caller
+    this.costRecordRepository.save(full).catch((err: Error) => {
+      this.logger.warn(`Failed to persist cost record to MongoDB: ${err.message}`);
+    });
     return full;
   }
 
@@ -66,5 +74,8 @@ export class CostTrackingService {
 
   reset(): void {
     this.records.length = 0;
+    this.costRecordRepository.deleteAll().catch((err: Error) => {
+      this.logger.warn(`Failed to reset cost records in MongoDB: ${err.message}`);
+    });
   }
 }

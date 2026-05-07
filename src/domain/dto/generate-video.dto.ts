@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import { IsEnum, IsOptional, IsNumber, IsString, Min, Max, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IntersectionType } from '@nestjs/swagger';
 import { GenerateScriptRequestDto } from './generate-script.dto';
@@ -20,4 +20,15 @@ export class GenerateVideoRequestDto extends IntersectionType(GenerateScriptRequ
   @Min(24)
   @Max(60)
   fps?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Voice ID for TTS. Use GET /videos/tts-voices to list voices for the active provider.',
+    example: 'en-IN-NeerjaNeural',
+    maxLength: 100,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  voice?: string;
 }

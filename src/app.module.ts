@@ -15,6 +15,8 @@ import { HealthModule } from './modules/health/health.module';
 import { CostModule } from './modules/cost/cost.module';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
+import { DatabaseModule } from './modules/database/database.module';
+import { PlaygroundModule } from './modules/playground/playground.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
     StorageModule,
     HealthModule,
     CostModule,
+    DatabaseModule,
+    PlaygroundModule,
   ],
   controllers: [AppController],
   providers: [

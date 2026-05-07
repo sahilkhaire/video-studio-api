@@ -4,6 +4,7 @@ import { RenderingService } from '../rendering/rendering.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
 import { IRenderedVideo } from '../../domain/interfaces/rendering.interface';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
+import { ITTSVoice } from '../../domain/interfaces/tts-provider.interface';
 
 export interface IVideoGenerationResult {
   video: IRenderedVideo;
@@ -33,7 +34,7 @@ export class VideoService {
     );
 
     // Step 1: Generate script + all AI content (images & audio per scene)
-    const content = await this.contentService.generateVideoContent(request);
+    const content = await this.contentService.generateVideoContent(request, request.voice);
 
     this.logger.log(
       `Content ready — script: "${content.script.title}", ${content.sceneAssets.length} scenes generated`,
@@ -63,5 +64,9 @@ export class VideoService {
 
   getActiveProviders(): { script: string; image: string; tts: string } {
     return this.contentService.getActiveProviders();
+  }
+
+  getTtsVoices(): Promise<ITTSVoice[]> {
+    return this.contentService.getTtsVoices();
   }
 }

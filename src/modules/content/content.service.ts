@@ -5,7 +5,7 @@ import {
   IImageGenerator,
   IGeneratedImage,
 } from '../../domain/interfaces/image-generator.interface';
-import { ITTSProvider, IGeneratedAudio } from '../../domain/interfaces/tts-provider.interface';
+import { ITTSProvider, ITTSVoice, IGeneratedAudio } from '../../domain/interfaces/tts-provider.interface';
 import { GenerateScriptRequestDto } from '../../domain/dto/generate-script.dto';
 import { GenerateImageRequestDto } from '../../domain/dto/generate-image.dto';
 import { GenerateAudioRequestDto } from '../../domain/dto/generate-audio.dto';
@@ -165,7 +165,7 @@ export class ContentService {
    * Scenes are processed in parallel. Failures on individual scenes are captured
    * and flagged rather than failing the entire job.
    */
-  async generateVideoContent(request: GenerateScriptRequestDto): Promise<IGeneratedContent> {
+  async generateVideoContent(request: GenerateScriptRequestDto, voice?: string): Promise<IGeneratedContent> {
     this.logger.log(`Starting video content generation for: "${request.topic}"`);
 
     const script = await this.generateScript(request);
@@ -174,7 +174,7 @@ export class ContentService {
     const maxConcurrentScenes = Math.max(1, this.configService.get<number>('video.queue.concurrency', 2));
     this.logger.log(`Generating scene assets with concurrency ${maxConcurrentScenes}`);
 
-    const sceneAssets = await this.generateSceneAssetsWithConcurrency(script, maxConcurrentScenes);
+    const sceneAssets = await this.generateSceneAssetsWithConcurrency(script, maxConcurrentScenes, voice);
 
     this.logger.log(`Content generation complete for: "${script.title}"`);
 
@@ -193,10 +193,11 @@ export class ContentService {
     sequenceNumber: number,
     imageDescription: string,
     narration: string,
+    voice?: string,
   ): Promise<ISceneAssets> {
     const [imageResult, audioResult] = await Promise.allSettled([
       this.generateImage({ prompt: imageDescription }),
-      this.generateAudio({ text: narration }),
+      this.generateAudio({ text: narration, voice }),
     ]);
 
     const sceneAsset: ISceneAssets = { sceneId, sequenceNumber };
@@ -225,6 +226,7 @@ export class ContentService {
   private async generateSceneAssetsWithConcurrency(
     script: IVideoScript,
     maxConcurrentScenes: number,
+    voice?: string,
   ): Promise<ISceneAssets[]> {
     const results: ISceneAssets[] = new Array(script.scenes.length);
     let cursor = 0;
@@ -244,6 +246,7 @@ export class ContentService {
           scene.sequenceNumber,
           scene.imageDescription,
           scene.narration,
+          voice,
         );
       }
     };
@@ -263,5 +266,9 @@ export class ContentService {
       image: this.imageGenerator.getProviderName(),
       tts: this.ttsProvider.getProviderName(),
     };
+  }
+
+  getTtsVoices(): Promise<ITTSVoice[]> {
+    return this.ttsProvider.getVoices();
   }
 }

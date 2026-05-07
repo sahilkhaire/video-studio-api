@@ -17,6 +17,7 @@ import {
   IEnqueueJobResponse,
   IVideoJobStatusResponse,
 } from '../../domain/interfaces/video-job.interface';
+import { ITTSVoice } from '../../domain/interfaces/tts-provider.interface';
 
 interface IProvidersResponse {
   script: string;
@@ -74,5 +75,16 @@ export class VideoController {
   @ApiResponse({ status: 200, description: 'Active providers returned' })
   getProviders(): IProvidersResponse {
     return this.videoService.getActiveProviders();
+  }
+
+  @Get('tts-voices')
+  @ApiOperation({
+    summary: 'List available TTS voices for the active provider',
+    description:
+      'Returns all voices supported by the currently configured TTS provider. Indian voices are flagged with indian: true.',
+  })
+  @ApiResponse({ status: 200, description: 'Voice list returned' })
+  async getTtsVoices(): Promise<ITTSVoice[]> {
+    return this.videoService.getTtsVoices();
   }
 }

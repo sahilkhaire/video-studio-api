@@ -5,6 +5,7 @@ import { VideoService } from '../video/video.service';
 import { VIDEO_QUEUE_NAME } from './constants/queue.constants';
 import { IVideoJobData, IVideoJobResult } from '../../domain/interfaces/video-job.interface';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
+import { VideoJobRepository } from '../database/repositories/video-job.repository';
 
 @Injectable()
 export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
@@ -14,6 +15,7 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly videoService: VideoService,
     private readonly configService: ConfigService,
+    private readonly videoJobRepository: VideoJobRepository,
   ) {}
 
   onModuleInit(): void {
@@ -73,6 +75,7 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Processing job ${job.id} — topic: "${job.data.topic}"`);
 
     await job.updateProgress(5);
+    await this.videoJobRepository.markActive(job.id ?? '');
 
     const request: GenerateVideoRequestDto = {
       topic: job.data.topic,
@@ -86,10 +89,12 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
     };
 
     await job.updateProgress(10);
+    await this.videoJobRepository.updateProgress(job.id ?? '', 10);
 
     const generationResult = await this.videoService.generateVideo(request);
 
     await job.updateProgress(100);
+    await this.videoJobRepository.updateProgress(job.id ?? '', 100);
 
     const result: IVideoJobResult = {
       videoPath: generationResult.video.videoPath,
@@ -107,6 +112,7 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
       generatedAt: generationResult.generatedAt,
     };
 
+    await this.videoJobRepository.markCompleted(job.id ?? '', result);
     return result;
   }
 }

@@ -108,6 +108,7 @@ describe('ContentService', () => {
 
     mockTtsProvider = {
       generateAudio: jest.fn(),
+      getVoices: jest.fn().mockResolvedValue([]),
       getProviderName: jest.fn().mockReturnValue('openai'),
     };
 
