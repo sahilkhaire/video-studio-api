@@ -1,253 +1,134 @@
-# Video Generation POC
+# Video Studio API
 
-Production-grade NestJS application for programmatic video generation using AI-powered content creation.
+Production-grade NestJS backend for AI-powered short and long-form video generation.
 
-## 🎯 Overview
+## Overview
 
-This POC demonstrates programmatic video generation for Reels and YouTube content (15s to 10+ minutes) without relying on third-party video generation SaaS tools. Uses AI for content generation (scripts, images, audio) and assembles videos using FFmpeg + node-canvas.
+Video Studio API generates complete videos from a topic by orchestrating:
 
-### Key Features
+1. Script generation (scene-by-scene narration + prompts)
+2. Image generation per scene
+3. TTS generation per scene
+4. Frame composition with captions
+5. FFmpeg assembly into final MP4
+6. Async queue processing + job tracking
 
-- **Multi-Provider AI Integration**: Switch between OpenAI, Anthropic, Stable Diffusion, ElevenLabs, etc.
-- **Production-Grade Architecture**: Clean Architecture, SOLID principles, comprehensive testing
-- **Async Job Processing**: BullMQ-based queue system with retry and error handling
-- **Flexible Content Input**: Text topics, JSON/YAML specs, or user-uploaded assets
-- **Storytelling Support**: Character consistency, scene templates, animations
-- **Observable**: Structured logging, Prometheus metrics, health checks
-- **Scalable**: Horizontal scaling, containerized, Kubernetes-ready
+The system supports provider switching, Redis-backed caching, MongoDB persistence, and a dedicated optional playground UI.
 
-## 🚀 Quick Start
+## Current Highlights
 
-### Prerequisites
+- Async generation pipeline with BullMQ workers
+- Multi-provider architecture (script/image/tts)
+- Ratio-aware generation (`16:9`, `9:16`, `1:1`)
+- Caption rendering with portrait-safe subtitle layout
+- Resilient audio assembly with missing-track safeguards
+- Redis content cache (script/image/audio)
+- MongoDB persistence for job and cost records
+- API key guard + throttling
+- Optional web playground at `/api/ui`
 
-- Node.js 20+
-- Docker & Docker Compose
-- Redis (or use Docker)
-- PostgreSQL (or use Docker)
-- FFmpeg (or use Docker)
+## Tech Stack
 
-### Installation
+- NestJS 10 + TypeScript (strict)
+- BullMQ + Redis
+- MongoDB + Mongoose
+- FFmpeg (`fluent-ffmpeg` + `ffmpeg-static`)
+- Canvas (`node-canvas`) for frame composition
+
+## Quick Start
+
+### 1. Install dependencies
 
 ```bash
-# Clone repository
-git clone <repository-url>
-cd poc-video-building
-
-# Install dependencies
 npm install
+```
 
-# Copy environment file
+### 2. Configure environment
+
+```bash
 cp .env.example .env
+```
 
-# Edit .env and add your API keys
-# Required: OPENAI_API_KEY (or other provider keys)
+Set required keys (example):
 
-# Start infrastructure (Redis, PostgreSQL)
-docker-compose up -d redis postgres
+- `OPENAI_API_KEY` (if using OpenAI providers)
+- `TOGETHER_API_KEY` (if using Together providers)
+- `ELEVENLABS_API_KEY` (if using ElevenLabs TTS)
 
-# Run database migrations (when implemented)
-# npm run migration:run
+### 3. Start infrastructure
 
-# Start development server
+```bash
+docker compose up -d redis mongodb
+```
+
+Optional:
+
+```bash
+docker compose up -d bull-board
+```
+
+### 4. Run app
+
+```bash
 npm run start:dev
 ```
 
-### Using Docker (Recommended)
+## API Base
 
-```bash
-# Start all services
-docker-compose up
+- Base URL: `http://localhost:3000/api`
+- Swagger docs (non-production): `http://localhost:3000/api/docs`
 
-# App will be available at http://localhost:3000
-# API docs: http://localhost:3000/api/docs
-# Bull Board: http://localhost:3001
-```
+## Key Endpoints
 
-## 📖 Documentation
+### Core
 
-### Project Structure
+- `POST /api/videos/generate` : enqueue video generation job
+- `GET /api/videos/jobs/:jobId` : fetch job status/result
+- `GET /api/videos/providers` : active providers
+- `GET /api/videos/tts-voices` : voices for active TTS provider
+- `GET /api/videos/mongo-details` : recent MongoDB records (jobs + costs)
 
-```
-src/
-├── modules/          # Feature modules
-│   ├── video/       # Video generation orchestration
-│   ├── rendering/   # Frame rendering & FFmpeg
-│   ├── content/     # AI content generation
-│   ├── queue/       # Job queue & workers
-│   └── storage/     # Storage abstraction
-├── domain/          # Core business logic
-│   ├── entities/    # Domain entities
-│   ├── interfaces/  # Contracts
-│   └── value-objects/
-├── common/          # Shared utilities
-│   ├── decorators/
-│   ├── filters/
-│   ├── guards/
-│   └── interceptors/
-├── config/          # Configuration
-└── monitoring/      # Health checks & metrics
-```
+### System
 
-### API Endpoints
+- `GET /api/health` : health check
+- `GET /api/costs/summary` : aggregated cost summary
+- `DELETE /api/costs/reset` : reset in-memory cost tracker
 
-Once implemented, the API will provide:
+### Optional Playground UI
 
-- `POST /api/videos` - Create video generation job
-- `GET /api/videos/:id` - Get job status
-- `GET /api/videos/:id/download` - Download video
-- `GET /api/videos` - List all jobs
-- `DELETE /api/videos/:id` - Delete video
-- `GET /health` - Health check
-- `GET /metrics` - Prometheus metrics
+- `GET /api/ui`
 
-### Environment Configuration
+Controlled by env flag:
 
-See `.env.example` for all configuration options.
-
-**Key configurations:**
-
-- **Providers**: Switch between AI providers (OpenAI, Claude, Ollama, etc.)
-- **Video Settings**: Resolution, FPS, codec, duration limits
-- **Storage**: Local filesystem or S3
-- **Queue**: Concurrency, retries, timeouts
-- **Caching**: TTL for different content types
-
-## 🧪 Testing
-
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Integration tests
-npm run test:integration
-
-# Test coverage
-npm run test:cov
-
-# Watch mode
-npm run test:watch
-```
-
-## 🔧 Development
-
-### Code Quality
-
-```bash
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
-# Format code
-npm run format
-```
-
-### Pre-commit Hooks
-
-Husky is configured to run linting and formatting before commits.
-
-### Coding Standards
-
-All code must follow the guidelines in `.ai-rules.md`:
-
-- TypeScript strict mode
-- No `any` types
-- Comprehensive error handling
-- Structured logging
-- Test coverage >80%
-- JSDoc documentation
-
-## 🏗️ Architecture
-
-### Multi-Provider Pattern
-
-All external AI services are abstracted behind interfaces:
-
-```typescript
-interface IScriptGenerator {
-  generate(topic: string): Promise<Script>;
-}
-```
-
-Implementations: `OpenAIScriptProvider`, `ClaudeScriptProvider`, `OllamaScriptProvider`
-
-Switch providers via environment:
 ```env
-SCRIPT_PROVIDER=openai  # or claude, ollama
+ENABLE_PLAYGROUND_UI=true
 ```
 
-### Clean Architecture Layers
+When disabled, `/api/ui` returns 404.
 
-1. **Domain**: Business entities and interfaces (framework-independent)
-2. **Application**: Use cases and orchestration (module services)
-3. **Infrastructure**: External integrations (providers, database, storage)
-4. **Presentation**: REST API (controllers, DTOs)
+## Aspect Ratio Behavior
 
-### Async Processing
+- API accepts `aspectRatio` in generation payload: `16:9`, `9:16`, `1:1`
+- If omitted and platform is `instagram_reels`, default is `9:16`
+- Image generation size is mapped to selected ratio:
+  - `16:9` -> landscape size
+  - `9:16` -> portrait size
+  - `1:1` -> square size
 
-- Jobs queued immediately, processing in background
-- BullMQ with Redis for distributed job processing
-- Retry with exponential backoff
-- Circuit breaker for external APIs
-- Dead letter queue for failed jobs
-
-## 🔐 Security
-
-- Input validation with class-validator
-- Rate limiting on all endpoints
-- Helmet.js security headers
-- Secrets via environment variables
-- No sensitive data in logs
-- HTTPS in production
-
-## 📊 Monitoring
-
-- **Health Checks**: `/health` endpoint (liveness, readiness)
-- **Metrics**: Prometheus format at `/metrics`
-- **Logging**: Structured JSON logs with Pino
-- **Tracing**: Correlation IDs for request tracking
-
-## 🚢 Deployment
-
-### Docker
+## Testing and Quality
 
 ```bash
-# Build production image
-docker build -t video-generation:latest .
-
-# Run container
-docker run -p 3000:3000 --env-file .env video-generation:latest
+npm run build
+npm run lint
+npm run test
+npm run test:integration
+npm run test:e2e
 ```
 
-### Kubernetes
+## Project Name
 
-Helm charts and K8s manifests will be provided in the `k8s/` directory.
+This repository is now branded as **Video Studio API**.
 
-## 📝 Contributing
+- npm package: `video-studio-api`
+- default app name: `video-studio-api`
 
-1. Read `.ai-rules.md` for coding standards
-2. Create feature branch
-3. Write tests (TDD approach)
-4. Ensure all tests pass
-5. Submit pull request
-
-## 📄 License
-
-MIT
-
-## 🙏 Acknowledgments
-
-- NestJS framework
-- FFmpeg for video processing
-- OpenAI for AI capabilities
-- All open-source contributors
-
----
-
-**Status**: 🚧 Work in Progress - Phase 1 Foundation Complete
-
-See `ROADMAP.md` for implementation progress and upcoming features.

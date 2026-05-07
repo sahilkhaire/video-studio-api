@@ -181,7 +181,7 @@ describe('ElevenLabsTTSProvider', () => {
 
       (configService.get as jest.Mock).mockImplementation((key: string, defaultVal?: string) => {
         if (key === 'providers.elevenlabs.apiKey') return 'el_test_key';
-        if (key === 'video.storage.tempPath') return '/tmp/video-poc';
+        if (key === 'video.storage.tempPath') return '/tmp/video-studio';
         return defaultVal;
       });
 
@@ -192,7 +192,7 @@ describe('ElevenLabsTTSProvider', () => {
       const result = await provider.generateAudio(requestWithoutPath);
 
       // Assert
-      expect(result.filePath).toContain('/tmp/video-poc');
+      expect(result.filePath).toContain('/tmp/video-studio');
       expect(result.filePath).toMatch(/\.mp3$/);
     });
   });

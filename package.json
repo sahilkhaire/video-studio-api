@@ -1,7 +1,7 @@
 {
-  "name": "video-generation-poc",
+  "name": "video-studio-api",
   "version": "0.1.0",
-  "description": "Production-grade NestJS video generation POC for programmatic video creation",
+  "description": "Production-grade NestJS video generation platform for programmatic video creation",
   "author": "Your Team",
   "private": true,
   "license": "MIT",

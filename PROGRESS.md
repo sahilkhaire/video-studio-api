@@ -251,7 +251,7 @@ See `SETUP.md` for detailed platform-specific instructions.
 ## 📂 Current Project Structure
 
 ```
-poc-video-building/
+video-studio-api/
 ├── .ai-rules.md                 # AI coding guidelines ⭐
 ├── .env.example                 # Environment template
 ├── .eslintrc.js                 # ESLint configuration
