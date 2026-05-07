@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import appConfig from './config/app.config';
 import videoConfig from './config/video.config';
 import providersConfig from './config/providers.config';
+import { ContentModule } from './modules/content/content.module';
+import { VideoModule } from './modules/video/video.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import providersConfig from './config/providers.config';
       load: [appConfig, videoConfig, providersConfig],
       envFilePath: ['.env.local', '.env'],
     }),
+    ContentModule,
+    VideoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
