@@ -13,6 +13,7 @@ jest.mock('canvas', () => {
     }),
     fillRect: jest.fn(),
     fillText: jest.fn(),
+    measureText: jest.fn().mockReturnValue({ width: 320 }),
     fill: jest.fn(),
     beginPath: jest.fn(),
     moveTo: jest.fn(),

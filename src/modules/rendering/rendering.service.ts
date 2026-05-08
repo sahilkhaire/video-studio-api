@@ -38,7 +38,12 @@ export class RenderingService {
     // Phase 2: Build audio track map aligned with scene order
     const audioTracks = script.scenes.map((scene) => {
       const assets = sceneAssets.find((a) => a.sceneId === scene.id);
-      return { sceneId: scene.id, audio: assets?.audio };
+      return {
+        sceneId: scene.id,
+        sequenceNumber: scene.sequenceNumber,
+        transition: scene.transition,
+        audio: assets?.audio,
+      };
     });
 
     // Phase 3: Assemble frames + audio into the final video
@@ -72,6 +77,7 @@ export class RenderingService {
         duration: scene.duration,
         style: script.style,
         resolution: resolutionSpec,
+        showCaptions: request.showCaptions,
       });
     });
 

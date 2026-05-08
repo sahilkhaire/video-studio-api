@@ -88,6 +88,7 @@ export class VideoService {
       resolution,
       aspectRatio,
       fps: request.fps,
+      showCaptions: request.showCaptions,
     });
 
     this.logger.log(`Video generation complete — ${video.videoPath}`);

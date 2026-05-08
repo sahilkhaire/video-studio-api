@@ -1,5 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+
+jest.mock('canvas', () => ({
+  createCanvas: jest.fn(),
+  loadImage: jest.fn(),
+}));
+
 import { VideoController } from './video.controller';
 import { VideoService } from './video.service';
 import { QueueService } from '../queue/queue.service';

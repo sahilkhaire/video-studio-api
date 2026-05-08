@@ -40,4 +40,15 @@ export default registerAs('video', () => ({
     ttlImages: parseInt(process.env.CACHE_TTL_IMAGES || '604800', 10), // 7 days
     ttlAudio: parseInt(process.env.CACHE_TTL_AUDIO || '604800', 10), // 7 days
   },
+
+  motion: {
+    enabled: (process.env.VIDEO_MOTION_ENABLED || 'true') === 'true',
+    transitionsEnabled: (process.env.VIDEO_TRANSITIONS_ENABLED || 'true') === 'true',
+    zoomMin: parseFloat(process.env.VIDEO_MOTION_ZOOM_MIN || '1.0'),
+    zoomMax: parseFloat(process.env.VIDEO_MOTION_ZOOM_MAX || '1.12'),
+    panIntensity: parseFloat(process.env.VIDEO_MOTION_PAN_INTENSITY || '0.035'),
+    transitionDurationSec: parseFloat(process.env.VIDEO_TRANSITION_DURATION_SEC || '0.45'),
+    preset: process.env.VIDEO_MOTION_PRESET || 'fast',
+    crf: parseInt(process.env.VIDEO_MOTION_CRF || '21', 10),
+  },
 }));

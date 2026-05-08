@@ -73,6 +73,7 @@ export interface IComposedFrame {
   sceneId: string;
   sequenceNumber: number;
   framePath: string;
+  captionPath?: string;
   width: number;
   height: number;
   duration: number;
@@ -95,4 +96,6 @@ export interface IRenderVideoRequest {
   aspectRatio?: VideoAspectRatio;
   fps?: number;
   outputPath?: string;
+  showCaptions?: boolean;
 }
+

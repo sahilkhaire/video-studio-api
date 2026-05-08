@@ -40,4 +40,11 @@ export class GenerateVideoRequestDto extends IntersectionType(GenerateScriptRequ
   @IsOptional()
   @MaxLength(100)
   voice?: string;
+
+  @ApiPropertyOptional({
+    description: 'Show caption / subtitle text overlaid on each scene. Defaults to true.',
+    default: true,
+  })
+  @IsOptional()
+  showCaptions?: boolean;
 }

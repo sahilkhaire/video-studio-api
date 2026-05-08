@@ -17,6 +17,8 @@ export interface IComposeFrameOptions {
   duration: number;
   style: VideoStyle;
   resolution: IVideoResolutionSpec;
+  /** Show subtitle overlay. Defaults to true when omitted. */
+  showCaptions?: boolean;
 }
 
 const SUBTITLE_FONT_SIZE_RATIO = 0.035; // relative to canvas height
@@ -31,7 +33,7 @@ export class FrameComposerService {
   constructor(private readonly configService: ConfigService) {}
 
   async composeFrame(options: IComposeFrameOptions): Promise<IComposedFrame> {
-    const { sceneId, sequenceNumber, image, narration, duration, style, resolution } = options;
+    const { sceneId, sequenceNumber, image, narration, duration, style, resolution, showCaptions } = options;
     const { width, height } = resolution;
 
     this.logger.debug(`Composing frame for scene ${sequenceNumber} (${width}x${height})`);
@@ -40,11 +42,17 @@ export class FrameComposerService {
     const ctx = canvas.getContext('2d');
 
     await this.drawBackground(ctx, image, width, height, style);
-    this.drawSubtitle(ctx, narration, width, height);
+    // Subtitle is NOT baked into the background frame — it is rendered as a separate
+    // transparent overlay PNG so the caption stays fixed while zoompan animates the image.
 
     const framePath = await this.saveFrame(canvas, sceneId);
 
-    return { sceneId, sequenceNumber, framePath, width, height, duration };
+    let captionPath: string | undefined;
+    if (showCaptions !== false && narration.trim()) {
+      captionPath = await this.composeCaptionOverlay(narration, width, height, sceneId);
+    }
+
+    return { sceneId, sequenceNumber, framePath, captionPath, width, height, duration };
   }
 
   private async drawBackground(
@@ -213,5 +221,28 @@ export class FrameComposerService {
     await fs.writeFile(framePath, buffer);
 
     return framePath;
+  }
+
+  /** Renders narration text onto a fully-transparent canvas so it can be overlaid
+   *  in FFmpeg AFTER the zoompan filter — captions stay fixed on screen. */
+  private async composeCaptionOverlay(
+    narration: string,
+    width: number,
+    height: number,
+    sceneId: string,
+  ): Promise<string> {
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    // No background fill → pixels outside the subtitle box stay transparent.
+    this.drawSubtitle(ctx, narration, width, height);
+
+    const tempDir = this.configService.get<string>('video.storage.tempPath', './temp');
+    const framesDir = join(tempDir, 'frames');
+    await fs.mkdir(framesDir, { recursive: true });
+
+    const captionPath = join(framesDir, `caption-${sceneId}-${uuidv4()}.png`);
+    const buffer = canvas.toBuffer('image/png');
+    await fs.writeFile(captionPath, buffer);
+    return captionPath;
   }
 }

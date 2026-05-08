@@ -1,8 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
+
+jest.mock('canvas', () => ({
+  createCanvas: jest.fn(),
+  loadImage: jest.fn(),
+}));
+
 import { VideoProcessor } from './video.processor';
 import { VideoService } from '../video/video.service';
+import { VideoJobRepository } from '../database/repositories/video-job.repository';
 import { IVideoJobData, IVideoJobResult } from '../../domain/interfaces/video-job.interface';
 import { VideoPlatform, VideoStyle } from '../../domain/enums/video.enums';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
@@ -65,6 +72,7 @@ describe('VideoProcessor', () => {
       providers: [
         VideoProcessor,
         { provide: VideoService, useValue: mockVideoService },
+        { provide: VideoJobRepository, useValue: { save: jest.fn(), findById: jest.fn(), updateStatus: jest.fn(), markActive: jest.fn().mockResolvedValue(undefined), markCompleted: jest.fn().mockResolvedValue(undefined), markFailed: jest.fn().mockResolvedValue(undefined), updateProgress: jest.fn().mockResolvedValue(undefined) } },
         {
           provide: ConfigService,
           useValue: {

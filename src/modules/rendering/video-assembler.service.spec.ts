@@ -2,12 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { VideoAssemblerService } from './video-assembler.service';
 import { IComposedFrame } from '../../domain/interfaces/rendering.interface';
-import { AudioFormat } from '../../domain/enums/video.enums';
+import { AudioFormat, SceneTransition } from '../../domain/enums/video.enums';
 
 jest.mock('fluent-ffmpeg', () => {
   const mockCmd = {
     input: jest.fn().mockReturnThis(),
     inputOptions: jest.fn().mockReturnThis(),
+    videoFilters: jest.fn().mockReturnThis(),
     videoCodec: jest.fn().mockReturnThis(),
     audioCodec: jest.fn().mockReturnThis(),
     outputOptions: jest.fn().mockReturnThis(),
@@ -90,7 +91,8 @@ describe('VideoAssemblerService', () => {
       expect(result.videoPath).toMatch(/\.mp4$/);
       expect(result.width).toBe(1280);
       expect(result.height).toBe(720);
-      expect(result.duration).toBe(16); // 2 frames × 8s
+      // Transition overlap slightly reduces end duration from strict sum of scenes.
+      expect(result.duration).toBeCloseTo(15.55, 2);
       expect(result.fps).toBe(30);
       expect(result.format).toBe('mp4');
     });
@@ -101,6 +103,8 @@ describe('VideoAssemblerService', () => {
       const audioTracks = [
         {
           sceneId: 'scene-1',
+          sequenceNumber: 1,
+          transition: SceneTransition.FADE,
           audio: {
             filePath: '/tmp/audio/scene-1.mp3',
             duration: 8,

@@ -1,7 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+jest.mock('canvas', () => ({
+  createCanvas: jest.fn(),
+  loadImage: jest.fn(),
+}));
+
 import { VideoService, IVideoGenerationResult } from './video.service';
 import { ContentService } from '../content/content.service';
 import { RenderingService } from '../rendering/rendering.service';
+import { VideoJobRepository } from '../database/repositories/video-job.repository';
+import { CostRecordRepository } from '../database/repositories/cost-record.repository';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
 import {
   VideoPlatform,
@@ -99,6 +107,8 @@ describe('VideoService', () => {
         VideoService,
         { provide: ContentService, useValue: mockContentService },
         { provide: RenderingService, useValue: mockRenderingService },
+        { provide: VideoJobRepository, useValue: { save: jest.fn(), findById: jest.fn(), findAll: jest.fn() } },
+        { provide: CostRecordRepository, useValue: { save: jest.fn() } },
       ],
     }).compile();
 
@@ -119,7 +129,11 @@ describe('VideoService', () => {
       const result: IVideoGenerationResult = await service.generateVideo(validRequest);
 
       // Assert
-      expect(mockContentService.generateVideoContent).toHaveBeenCalledWith(validRequest);
+      expect(mockContentService.generateVideoContent).toHaveBeenCalledWith(
+        validRequest,
+        undefined,
+        expect.any(String),
+      );
       expect(mockRenderingService.renderVideo).toHaveBeenCalledWith(
         expect.objectContaining({
           script: mockContent.script,

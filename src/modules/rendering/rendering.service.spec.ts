@@ -1,5 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+
+jest.mock('canvas', () => ({
+  createCanvas: jest.fn(),
+  loadImage: jest.fn(),
+}));
+
 import { RenderingService } from './rendering.service';
 import { FrameComposerService } from './frame-composer.service';
 import { VideoAssemblerService } from './video-assembler.service';
