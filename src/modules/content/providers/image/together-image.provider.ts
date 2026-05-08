@@ -31,10 +31,9 @@ export class TogetherImageProvider implements IImageGenerator {
     this.logger.log(`Generating image via TogetherAI: "${request.prompt.slice(0, 60)}..."`);
 
     const client = this.getClient();
-    const configuredModel = this.configService.get<string>(
-      'providers.together.imageModel',
-      this.configService.get<string>('providers.image.model', DEFAULT_MODEL),
-    );
+    const configuredModel =
+      request.model ??
+      this.configService.get<string>('providers.together.imageModel', DEFAULT_MODEL);
     const candidateModels = this.buildCandidateModels(configuredModel);
     const maxAttempts = Math.max(
       1,
@@ -82,12 +81,10 @@ export class TogetherImageProvider implements IImageGenerator {
           lastError = error;
 
           if (
-            this.isNonServerlessModelError(error) &&
+            (this.isNonServerlessModelError(error) || this.isModelNotFoundError(error)) &&
             model !== candidateModels[candidateModels.length - 1]
           ) {
-            this.logger.warn(
-              `TogetherAI model ${model} requires a dedicated endpoint; trying fallback model.`,
-            );
+            this.logger.warn(`TogetherAI model ${model} is unavailable; trying fallback model.`);
             break;
           }
 
@@ -131,7 +128,9 @@ export class TogetherImageProvider implements IImageGenerator {
 
   private parseDimensions(size: ImageSize): [number, number] {
     const [w, h] = size.split('x').map(Number);
-    return [w, h];
+    // Together AI accepts width/height in [256, 1440] and both must be multiples of 32.
+    const clamp = (v: number): number => Math.min(1440, Math.max(256, Math.round(v / 32) * 32));
+    return [clamp(w), clamp(h)];
   }
 
   private buildCandidateModels(configuredModel: string): string[] {
@@ -149,6 +148,16 @@ export class TogetherImageProvider implements IImageGenerator {
   private isNonServerlessModelError(error: unknown): boolean {
     const message = (error as { message?: string })?.message?.toLowerCase() ?? '';
     return message.includes('non-serverless model') || message.includes('dedicated endpoint');
+  }
+
+  private isModelNotFoundError(error: unknown): boolean {
+    const status = (error as { status?: number })?.status;
+    const message = (error as { message?: string })?.message?.toLowerCase() ?? '';
+    return (
+      status === 404 ||
+      message.includes('unable to access model') ||
+      message.includes('model not found')
+    );
   }
 
   private async sleep(ms: number): Promise<void> {

@@ -49,6 +49,7 @@ export class VideoJobRepository {
       uploadedMusicPath: data.uploadedMusicPath,
       scriptProvider: data.scriptProvider,
       imageProvider: data.imageProvider,
+      imageModel: data.imageModel,
       status: VideoJobStatus.WAITING,
       progress: 0,
     });

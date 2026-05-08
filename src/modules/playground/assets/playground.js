@@ -64,6 +64,23 @@ const refs = {
   requestStatus: document.getElementById('requestStatus'),
   output: document.getElementById('output'),
   menu: document.getElementById('menu'),
+  // Music Story
+  musicTopic: document.getElementById('musicTopic'),
+  musicLyrics: document.getElementById('musicLyrics'),
+  musicAdditionalContext: document.getElementById('musicAdditionalContext'),
+  musicStyle: document.getElementById('musicStyle'),
+  musicFps: document.getElementById('musicFps'),
+  musicYoutubeResolution: document.getElementById('musicYoutubeResolution'),
+  musicReelsResolution: document.getElementById('musicReelsResolution'),
+  musicScriptProvider: document.getElementById('musicScriptProvider'),
+  musicImageProvider: document.getElementById('musicImageProvider'),
+  musicImageModel: document.getElementById('musicImageModel'),
+  musicFile: document.getElementById('musicFile'),
+  musicUrl: document.getElementById('musicUrl'),
+  musicPath: document.getElementById('musicPath'),
+  musicSourceTabs: document.getElementById('musicSourceTabs'),
+  enqueueMusicBtn: document.getElementById('enqueueMusicBtn'),
+  musicStatus: document.getElementById('musicStatus'),
 };
 
 function setStatus(message, level) {
@@ -362,3 +379,116 @@ refs.mongoDetailsBtn.addEventListener('click', async () => {
 
 refs.samplePreset.value = '0';
 applySample(samples[0]);
+
+// ── Music Story tab switching ─────────────────────────────────────────────────
+
+function getActiveMusicTab() {
+  const active = refs.musicSourceTabs.querySelector('.tab-btn.active');
+  return active ? active.getAttribute('data-tab') : 'tab-upload';
+}
+
+refs.musicSourceTabs.addEventListener('click', (event) => {
+  const btn = event.target.closest('.tab-btn');
+  if (!btn) return;
+  const target = btn.getAttribute('data-tab');
+  refs.musicSourceTabs.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['tab-upload', 'tab-url', 'tab-path'].forEach((id) => {
+    const pane = document.getElementById(id);
+    if (pane) pane.classList.toggle('hidden', id !== target);
+  });
+});
+
+function setMusicStatus(message, level) {
+  refs.musicStatus.textContent = message;
+  refs.musicStatus.className = 'status ' + (level || 'good');
+}
+
+refs.enqueueMusicBtn.addEventListener('click', async () => {
+  const topic = refs.musicTopic.value.trim();
+  if (topic.length < 10) {
+    setMusicStatus('Topic must be at least 10 characters.', 'bad');
+    return;
+  }
+
+  const activeTab = getActiveMusicTab();
+  const hasFile = activeTab === 'tab-upload' && refs.musicFile.files && refs.musicFile.files.length > 0;
+  const hasUrl = activeTab === 'tab-url' && refs.musicUrl.value.trim().length > 0;
+  const hasPath = activeTab === 'tab-path' && refs.musicPath.value.trim().length > 0;
+
+  if (!hasFile && !hasUrl && !hasPath) {
+    setMusicStatus('Provide a music source: upload a file, paste a URL, or enter a server path.', 'bad');
+    return;
+  }
+
+  try {
+    setMusicStatus('Submitting music story job...', 'warn');
+
+    let result;
+
+    if (hasFile) {
+      const formData = new FormData();
+      formData.append('topic', topic);
+      const lyrics = refs.musicLyrics.value.trim();
+      if (lyrics) formData.append('lyrics', lyrics);
+      const ctx = refs.musicAdditionalContext.value.trim();
+      if (ctx) formData.append('additionalContext', ctx);
+      formData.append('style', refs.musicStyle.value);
+      formData.append('fps', refs.musicFps.value);
+      formData.append('youtubeResolution', refs.musicYoutubeResolution.value);
+      formData.append('reelsResolution', refs.musicReelsResolution.value);
+      const scriptProvider = refs.musicScriptProvider.value;
+      if (scriptProvider) formData.append('scriptProvider', scriptProvider);
+      const imageProvider = refs.musicImageProvider.value;
+      if (imageProvider) formData.append('imageProvider', imageProvider);
+      const imageModel = refs.musicImageModel.value.trim();
+      if (imageModel) formData.append('imageModel', imageModel);
+      formData.append('musicFile', refs.musicFile.files[0]);
+
+      const apiKey = refs.apiKey.value.trim();
+      const response = await fetch('/api/videos/generate-music-story', {
+        method: 'POST',
+        headers: apiKey ? { 'x-api-key': apiKey } : {},
+        body: formData,
+      });
+      const body = await response.json().catch(() => ({ message: 'No JSON body returned' }));
+      if (!response.ok) throw { status: response.status, body };
+      result = body;
+    } else {
+      const payload = {
+        topic,
+        style: refs.musicStyle.value,
+        fps: Number(refs.musicFps.value),
+        youtubeResolution: refs.musicYoutubeResolution.value,
+        reelsResolution: refs.musicReelsResolution.value,
+      };
+      const lyrics = refs.musicLyrics.value.trim();
+      if (lyrics) payload.lyrics = lyrics;
+      const ctx = refs.musicAdditionalContext.value.trim();
+      if (ctx) payload.additionalContext = ctx;
+      const scriptProvider = refs.musicScriptProvider.value;
+      if (scriptProvider) payload.scriptProvider = scriptProvider;
+      const imageProvider = refs.musicImageProvider.value;
+      if (imageProvider) payload.imageProvider = imageProvider;
+      const imageModel = refs.musicImageModel.value.trim();
+      if (imageModel) payload.imageModel = imageModel;
+      if (hasUrl) payload.musicUrl = refs.musicUrl.value.trim();
+      if (hasPath) payload.musicPath = refs.musicPath.value.trim();
+
+      result = await callApi('/api/videos/generate-music-story', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (result && result.jobId) {
+      refs.jobId.value = result.jobId;
+    }
+
+    setMusicStatus('Music story job enqueued successfully.', 'good');
+    writeOutput(result);
+  } catch (error) {
+    setMusicStatus('Failed to enqueue music story job.', 'bad');
+    writeOutput(error);
+  }
+});

@@ -48,6 +48,7 @@ export interface IMusicVideoJobData {
   reelsResolution?: VideoResolution;
   scriptProvider?: ScriptProvider;
   imageProvider?: ImageProvider;
+  imageModel?: string;
 }
 
 export type IVideoQueueJobData = IVideoJobData | IMusicVideoJobData;

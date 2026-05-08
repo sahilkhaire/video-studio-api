@@ -37,12 +37,13 @@ export class StableDiffusionImageProvider implements IImageGenerator {
     this.logger.log(`Generating image with Stable Diffusion: "${request.prompt.slice(0, 60)}..."`);
 
     const apiKey = this.getApiKey();
+    const model = request.model ?? STABLE_DIFFUSION_MODEL;
     const size = request.size ?? ImageSize.SQUARE;
     const [width, height] = this.parseDimensions(size);
     const prompt = this.buildPrompt(request);
 
     try {
-      const prediction = await this.createPrediction(apiKey, prompt, width, height);
+      const prediction = await this.createPrediction(apiKey, model, prompt, width, height);
       const output = await this.pollForCompletion(apiKey, prediction.id);
 
       return {
@@ -69,12 +70,13 @@ export class StableDiffusionImageProvider implements IImageGenerator {
 
   private async createPrediction(
     apiKey: string,
+    model: string,
     prompt: string,
     width: number,
     height: number,
   ): Promise<IReplicatePrediction> {
     const response = await axios.post<IReplicatePrediction>(
-      `https://api.replicate.com/v1/models/${STABLE_DIFFUSION_MODEL}/predictions`,
+      `https://api.replicate.com/v1/models/${model}/predictions`,
       {
         input: {
           prompt,

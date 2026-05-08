@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import ffmpeg = require('fluent-ffmpeg');
 import * as ffmpegStatic from 'ffmpeg-static';
+import ffprobeStatic = require('ffprobe-static');
 import { promises as fs } from 'fs';
 import { isAbsolute, join, resolve } from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,7 +53,11 @@ export class VideoAssemblerService {
     // ffmpeg-static export shape can be string (CJS) or { default: string } (ESM interop).
     const ffmpegPath = this.resolveFfmpegPath(ffmpegStatic as unknown as FFmpegStaticExport);
     ffmpeg.setFfmpegPath(ffmpegPath);
+    const ffprobePath: string =
+      typeof ffprobeStatic === 'string' ? ffprobeStatic : (ffprobeStatic as { path: string }).path;
+    ffmpeg.setFfprobePath(ffprobePath);
     this.logger.log(`FFmpeg binary: ${ffmpegPath}`);
+    this.logger.log(`FFprobe binary: ${ffprobePath}`);
   }
 
   async assembleVideo(options: IAssembleVideoOptions): Promise<IRenderedVideo> {

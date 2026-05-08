@@ -149,7 +149,11 @@ export class VideoService {
       request.scriptProvider,
     );
 
-    const sceneAssets = await this.generateVisualSceneAssets(script, request.imageProvider);
+    const sceneAssets = await this.generateVisualSceneAssets(
+      script,
+      request.imageProvider,
+      request.imageModel,
+    );
 
     const fps = request.fps ?? 30;
     const youtubeResolution = request.youtubeResolution ?? VideoResolution.FULL_HD_1080P;
@@ -263,6 +267,7 @@ export class VideoService {
       }>;
     },
     imageProvider?: IMusicVideoJobData['imageProvider'],
+    imageModel?: string,
   ): Promise<ISceneAssets[]> {
     const sceneConcurrency = Math.max(
       1,
@@ -291,6 +296,7 @@ export class VideoService {
             {
               prompt: scene.imageDescription,
               size: imageSize,
+              ...(imageModel ? { model: imageModel } : {}),
             },
             imageProvider,
           );

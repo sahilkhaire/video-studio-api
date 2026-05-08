@@ -123,6 +123,7 @@ export class VideoController {
       reelsResolution: dto.reelsResolution ?? VideoResolution.FULL_HD_1080P,
       scriptProvider: dto.scriptProvider,
       imageProvider: dto.imageProvider,
+      imageModel: dto.imageModel,
     });
   }
 

@@ -22,10 +22,12 @@ jest.mock('fluent-ffmpeg', () => {
   };
   const factory = jest.fn().mockReturnValue(mockCmd);
   (factory as unknown as { setFfmpegPath: jest.Mock }).setFfmpegPath = jest.fn();
+  (factory as unknown as { setFfprobePath: jest.Mock }).setFfprobePath = jest.fn();
   return factory;
 });
 
 jest.mock('ffmpeg-static', () => '/usr/bin/ffmpeg');
+jest.mock('ffprobe-static', () => ({ path: '/usr/bin/ffprobe' }));
 
 jest.mock('fs', () => ({
   promises: {

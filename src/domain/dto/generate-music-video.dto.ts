@@ -73,6 +73,16 @@ export class GenerateMusicVideoRequestDto {
   imageProvider?: ImageProvider;
 
   @ApiPropertyOptional({
+    description:
+      'Override the model used by the selected image provider (e.g. "dall-e-3", "black-forest-labs/FLUX.1-pro")',
+    maxLength: 200,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  imageModel?: string;
+
+  @ApiPropertyOptional({
     enum: VideoResolution,
     default: VideoResolution.FULL_HD_1080P,
     description: 'Target quality for YouTube output (16:9)',

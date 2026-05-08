@@ -47,4 +47,13 @@ export class GenerateImageRequestDto {
   @Min(1)
   @Max(4)
   count?: number;
+
+  @ApiPropertyOptional({
+    description: 'Override the model used by the selected image provider (e.g. "dall-e-3", "black-forest-labs/FLUX.1-pro")',
+    maxLength: 200,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  model?: string;
 }

@@ -117,19 +117,18 @@ export class ContentService {
     request: GenerateImageRequestDto,
     providerOverride?: ImageProvider,
   ): Promise<IGeneratedImage> {
-    const cacheKey = this.cacheKeyService.forImage(request);
-    const cached = await this.contentCacheService.get<IGeneratedImage>(cacheKey);
-    if (cached) {
-      this.logger.debug(`Image cache hit: ${cacheKey}`);
-      return cached;
-    }
-
     const start = Date.now();
     const imageGenerator = this.providerResolverService.resolveImageProvider(
       providerOverride,
       this.imageGenerator,
     );
     const providerName = imageGenerator.getProviderName();
+    const cacheKey = this.cacheKeyService.forImage({ ...request, _provider: providerName });
+    const cached = await this.contentCacheService.get<IGeneratedImage>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Image cache hit: ${cacheKey}`);
+      return cached;
+    }
     try {
       const result = await imageGenerator.generateImage(request);
       this.costTrackingService.recordCall({

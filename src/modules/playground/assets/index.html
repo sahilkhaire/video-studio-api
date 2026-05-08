@@ -15,6 +15,7 @@
       </div>
       <nav class="menu" id="menu">
         <button data-target="sec-generate" class="active">Generate Video</button>
+        <button data-target="sec-music">Music Story</button>
         <button data-target="sec-voices">Voices & Providers</button>
         <button data-target="sec-jobs">Job Tracking</button>
         <button data-target="sec-mongo">MongoDB Details</button>
@@ -114,6 +115,109 @@
           <button class="btn btn-primary" id="enqueueBtn">Enqueue Video Job</button>
         </div>
         <p id="requestStatus" class="status"></p>
+      </section>
+
+      <section class="panel" id="sec-music">
+        <h3>Music Story</h3>
+        <p class="section-hint">Generates YouTube (16:9) + Reels (9:16) visual-only videos from a song. No captions, no narration — the original song is the sole audio track.</p>
+        <div class="grid">
+          <div class="field full">
+            <label for="musicTopic">Story Topic <span class="req">*</span></label>
+            <textarea id="musicTopic" placeholder="e.g. A soul's journey through neon city streets at midnight (min 10 chars)"></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="musicLyrics">Lyrics (optional)</label>
+            <textarea id="musicLyrics" placeholder="Paste song lyrics here — used as visual narrative guidance"></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="musicAdditionalContext">Additional Context (optional)</label>
+            <textarea id="musicAdditionalContext" placeholder="Mood, color palette, art direction hints…"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="musicStyle">Visual Style</label>
+            <select id="musicStyle">
+              <option value="cartoon">cartoon (default)</option>
+              <option value="realistic">realistic</option>
+              <option value="animated">animated</option>
+              <option value="cinematic">cinematic</option>
+              <option value="minimal">minimal</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="musicFps">FPS</label>
+            <input id="musicFps" type="number" min="24" max="60" value="30" />
+          </div>
+
+          <div class="field">
+            <label for="musicYoutubeResolution">YouTube Resolution</label>
+            <select id="musicYoutubeResolution">
+              <option value="720p">720p</option>
+              <option value="1080p" selected>1080p (default)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="musicReelsResolution">Reels Resolution</label>
+            <select id="musicReelsResolution">
+              <option value="720p">720p</option>
+              <option value="1080p" selected>1080p (default)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="musicScriptProvider">Script Provider (optional)</label>
+            <select id="musicScriptProvider">
+              <option value="">Use env default</option>
+              <option value="openai">openai</option>
+              <option value="claude">claude</option>
+              <option value="together-ai">together-ai</option>
+              <option value="ollama">ollama</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="musicImageProvider">Image Provider (optional)</label>
+            <select id="musicImageProvider">
+              <option value="">Use env default</option>
+              <option value="dalle">dalle</option>
+              <option value="together-ai">together-ai</option>
+              <option value="stable-diffusion">stable-diffusion</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="musicImageModel">Image Model Override (optional)</label>
+            <input id="musicImageModel" placeholder="e.g. dall-e-3 · black-forest-labs/FLUX.1-pro · black-forest-labs/FLUX.1-schnell" />
+          </div>
+
+          <div class="field full">
+            <label>Music Source <span class="req">*</span> — pick one</label>
+            <div class="tabs" id="musicSourceTabs">
+              <button class="tab-btn active" data-tab="tab-upload">Upload File</button>
+              <button class="tab-btn" data-tab="tab-url">Remote URL</button>
+              <button class="tab-btn" data-tab="tab-path">Server Path</button>
+            </div>
+            <div id="tab-upload" class="tab-pane">
+              <input id="musicFile" type="file" accept=".mp3,.wav" />
+              <p class="hint">mp3 or wav, up to 80 MB</p>
+            </div>
+            <div id="tab-url" class="tab-pane hidden">
+              <input id="musicUrl" type="url" placeholder="https://example.com/song.mp3" />
+            </div>
+            <div id="tab-path" class="tab-pane hidden">
+              <input id="musicPath" type="text" placeholder="./media/storage/song.mp3" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn btn-primary" id="enqueueMusicBtn">Enqueue Music Story Job</button>
+        </div>
+        <p id="musicStatus" class="status"></p>
       </section>
 
       <section class="panel" id="sec-voices">
