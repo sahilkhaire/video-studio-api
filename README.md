@@ -19,10 +19,17 @@ The system supports provider switching, Redis-backed caching, MongoDB persistenc
 
 Sample outputs currently present in this repository workspace:
 
-| Use Case | Output File |
-| --- | --- |
-| Content-to-video sample | [video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4](artifacts/videos/video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4) |
-| Content-to-video sample | [video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4](artifacts/videos/video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4) |
+### Sample 1
+
+<video src="artifacts/videos/video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4" controls muted playsinline width="720"></video>
+
+Fallback link: [video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4](artifacts/videos/video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4)
+
+### Sample 2
+
+<video src="artifacts/videos/video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4" controls muted playsinline width="720"></video>
+
+Fallback link: [video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4](artifacts/videos/video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4)
 
 
 ## Current Highlights
