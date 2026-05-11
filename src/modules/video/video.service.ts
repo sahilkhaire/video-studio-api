@@ -7,12 +7,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContentService } from '../content/content.service';
 import { RenderingService } from '../rendering/rendering.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
+import { GenerateContentImagesVideoRequestDto } from '../../domain/dto/generate-content-images-video.dto';
 import { IRenderedVideo } from '../../domain/interfaces/rendering.interface';
 import { VideoAspectRatio, VideoResolution } from '../../domain/interfaces/rendering.interface';
+import { resolveVideoResolutionSpec } from '../../domain/interfaces/rendering.interface';
 import { ITTSVoice } from '../../domain/interfaces/tts-provider.interface';
 import { VideoJobRepository } from '../database/repositories/video-job.repository';
 import { CostRecordRepository } from '../database/repositories/cost-record.repository';
 import {
+  AudioFormat,
+  ImageFormat,
   ImageSize,
   SceneTransition,
   VideoPlatform,
@@ -25,6 +29,8 @@ import {
   VideoJobType,
 } from '../../domain/interfaces/video-job.interface';
 import { ISceneAssets } from '../content/content.service';
+import { IVideoScript } from '../../domain/interfaces/script-generator.interface';
+import { EdgeTTSProvider } from '../content/providers/tts/edge-tts.provider';
 
 export interface IVideoGenerationResult {
   video: IRenderedVideo;
@@ -120,6 +126,124 @@ export class VideoService {
       imageProvider: content.imageProvider,
       audioProvider: content.audioProvider,
       generatedAt: content.generatedAt,
+    };
+  }
+
+  async generateVideoFromContentImages(
+    request: GenerateContentImagesVideoRequestDto,
+  ): Promise<IVideoGenerationResult> {
+    const resolution = request.resolution ?? VideoResolution.HD_720P;
+    const aspectRatio = request.aspectRatio ?? VideoAspectRatio.LANDSCAPE_16_9;
+    const fps = request.fps ?? 30;
+    const style = request.style ?? VideoStyle.CINEMATIC;
+    const resolutionSpec = resolveVideoResolutionSpec(resolution, aspectRatio);
+
+    this.logger.log(
+      `Content-image video generation started — segments: ${request.data.length}, resolution: ${resolution}, aspectRatio: ${aspectRatio}`,
+    );
+
+    const edgeTtsProvider = new EdgeTTSProvider(this.configService);
+    const generatedAudio = await Promise.all(
+      request.data.map((segment) =>
+        edgeTtsProvider.generateAudio({
+          text: segment.content,
+          voice: request.voice,
+        }),
+      ),
+    );
+    const segmentAudio = await Promise.all(
+      generatedAudio.map(async (audio) => {
+        const actualDuration = await this.getAudioDurationSeconds(audio.filePath).catch(() => 0);
+        return {
+          ...audio,
+          duration: Math.max(1, actualDuration || audio.duration || 1),
+        };
+      }),
+    );
+
+    const scenes: IVideoScript['scenes'] = [];
+    const sceneAssets: ISceneAssets[] = [];
+    let sequenceNumber = 1;
+
+    for (let segmentIndex = 0; segmentIndex < request.data.length; segmentIndex += 1) {
+      const segment = request.data[segmentIndex];
+      const audio = segmentAudio[segmentIndex];
+      const segmentDuration = Math.max(1, audio.duration || 1);
+      const perImageDuration = Math.max(0.8, segmentDuration / segment.images.length);
+
+      for (let imageIndex = 0; imageIndex < segment.images.length; imageIndex += 1) {
+        const imageUrl = segment.images[imageIndex];
+        const sceneId = `segment-${segmentIndex + 1}-image-${imageIndex + 1}-${uuidv4()}`;
+
+        scenes.push({
+          id: sceneId,
+          sequenceNumber,
+          narration: segment.content,
+          imageDescription: 'User provided image URL',
+          duration: perImageDuration,
+          transition: SceneTransition.FADE,
+        });
+
+        sceneAssets.push({
+          sceneId,
+          sequenceNumber,
+          image: {
+            url: imageUrl,
+            width: resolutionSpec.width,
+            height: resolutionSpec.height,
+            format: this.resolveImageFormat(imageUrl),
+            prompt: 'User provided image URL',
+          },
+          ...(imageIndex === 0
+            ? {
+                audio: {
+                  filePath: audio.filePath,
+                  duration: segmentDuration,
+                  format: audio.format ?? AudioFormat.MP3,
+                  sampleRate: audio.sampleRate,
+                  text: segment.content,
+                },
+              }
+            : {}),
+        });
+
+        sequenceNumber += 1;
+      }
+    }
+
+    const totalDuration = scenes.reduce((acc, scene) => acc + scene.duration, 0);
+    const generatedAt = new Date();
+    const script: IVideoScript = {
+      title: 'Content and Images Video',
+      description: `Generated from ${request.data.length} user-provided content segments and image lists.`,
+      platform: VideoPlatform.YOUTUBE,
+      style,
+      scenes,
+      totalDuration,
+      generatedAt,
+    };
+
+    const video = await this.renderingService.renderVideo({
+      script,
+      sceneAssets,
+      resolution,
+      aspectRatio,
+      fps,
+      showCaptions: request.showCaptions ?? request.showCaption,
+      transitionsEnabled: false,
+    });
+
+    this.logger.log(`Content-image video generation complete — ${video.videoPath}`);
+
+    return {
+      video,
+      title: script.title,
+      description: script.description,
+      totalScenes: scenes.length,
+      scriptProvider: 'user-input',
+      imageProvider: 'user-input',
+      audioProvider: edgeTtsProvider.getProviderName(),
+      generatedAt,
     };
   }
 
@@ -398,5 +522,16 @@ export class VideoService {
         }
       }
     }
+  }
+
+  private resolveImageFormat(imageUrl: string): ImageFormat {
+    const normalizedUrl = imageUrl.toLowerCase().split('?')[0].split('#')[0];
+    if (normalizedUrl.endsWith('.jpg') || normalizedUrl.endsWith('.jpeg')) {
+      return ImageFormat.JPEG;
+    }
+    if (normalizedUrl.endsWith('.webp')) {
+      return ImageFormat.WEBP;
+    }
+    return ImageFormat.PNG;
   }
 }

@@ -8,6 +8,7 @@ jest.mock('canvas', () => ({
 import { VideoService, IVideoGenerationResult } from './video.service';
 import { ContentService } from '../content/content.service';
 import { RenderingService } from '../rendering/rendering.service';
+import { EdgeTTSProvider } from '../content/providers/tts/edge-tts.provider';
 import { VideoJobRepository } from '../database/repositories/video-job.repository';
 import { CostRecordRepository } from '../database/repositories/cost-record.repository';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +21,7 @@ import {
   AudioFormat,
 } from '../../domain/enums/video.enums';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
+import { VideoAspectRatio } from '../../domain/interfaces/rendering.interface';
 
 describe('VideoService', () => {
   let service: VideoService;
@@ -208,6 +210,49 @@ describe('VideoService', () => {
 
       // Assert
       expect(result).toEqual({ script: 'claude', image: 'dalle', tts: 'elevenlabs' });
+    });
+  });
+
+  describe('generateVideoFromContentImages', () => {
+    it('should generate scene graph with Edge TTS and render final video', async () => {
+      const edgeAudioSpy = jest
+        .spyOn(EdgeTTSProvider.prototype, 'generateAudio')
+        .mockResolvedValue({
+          filePath: '/tmp/edge-audio.mp3',
+          duration: 8,
+          format: AudioFormat.MP3,
+          sampleRate: 24000,
+          text: 'Intro narration',
+        });
+
+      mockRenderingService.renderVideo.mockResolvedValueOnce(mockRenderedVideo);
+
+      const result = await service.generateVideoFromContentImages({
+        data: [
+          {
+            content: 'Intro narration',
+            images: ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+          },
+        ],
+        showCaptions: true,
+        resolution: VideoResolution.HD_720P,
+        aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
+        fps: 30,
+      });
+
+      expect(edgeAudioSpy).toHaveBeenCalledTimes(1);
+      expect(mockRenderingService.renderVideo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resolution: VideoResolution.HD_720P,
+          aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
+          fps: 30,
+          showCaptions: true,
+        }),
+      );
+      expect(result.audioProvider).toBe('edge-tts');
+      expect(result.totalScenes).toBe(2);
+
+      edgeAudioSpy.mockRestore();
     });
   });
 });

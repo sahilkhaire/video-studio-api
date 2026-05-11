@@ -16,6 +16,7 @@
       <nav class="menu" id="menu">
         <button data-target="sec-generate" class="active">Generate Video</button>
         <button data-target="sec-music">Music Story</button>
+        <button data-target="sec-content-images">Content + Images Video</button>
         <button data-target="sec-voices">Voices & Providers</button>
         <button data-target="sec-jobs">Job Tracking</button>
         <button data-target="sec-mongo">MongoDB Details</button>
@@ -218,6 +219,69 @@
           <button class="btn btn-primary" id="enqueueMusicBtn">Enqueue Music Story Job</button>
         </div>
         <p id="musicStatus" class="status"></p>
+      </section>
+
+      <section class="panel" id="sec-content-images">
+        <h3>Content + Images Video</h3>
+        <p class="section-hint">Creates a final video from provided content and image URLs. Uses free Edge TTS audio and can optionally show captions.</p>
+        <div class="grid">
+          <div class="field">
+            <label for="contentImagesShowCaptions">Show Captions</label>
+            <select id="contentImagesShowCaptions">
+              <option value="true" selected>true</option>
+              <option value="false">false</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="contentImagesVoice">Edge Voice (optional)</label>
+            <input id="contentImagesVoice" placeholder="en-US-AriaNeural" />
+          </div>
+
+          <div class="field">
+            <label for="contentImagesStyle">Fallback Style</label>
+            <select id="contentImagesStyle">
+              <option value="cinematic" selected>cinematic</option>
+              <option value="cartoon">cartoon</option>
+              <option value="realistic">realistic</option>
+              <option value="animated">animated</option>
+              <option value="minimal">minimal</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="contentImagesResolution">Resolution</label>
+            <select id="contentImagesResolution">
+              <option value="480p">480p</option>
+              <option value="720p" selected>720p</option>
+              <option value="1080p">1080p</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="contentImagesAspectRatio">Aspect Ratio</label>
+            <select id="contentImagesAspectRatio">
+              <option value="16:9" selected>16:9 (Landscape)</option>
+              <option value="9:16">9:16 (Portrait)</option>
+              <option value="1:1">1:1 (Square)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="contentImagesFps">FPS</label>
+            <input id="contentImagesFps" type="number" min="24" max="60" value="30" />
+          </div>
+
+          <div class="field full">
+            <label for="contentImagesData">Data (JSON array)</label>
+            <textarea id="contentImagesData" placeholder='[{"content":"Explain MVP validation in simple steps.","images":["https://example.com/one.jpg","https://example.com/two.jpg"]}]'></textarea>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn btn-primary" id="generateContentImagesBtn">Generate Content + Images Video</button>
+        </div>
+        <p id="contentImagesStatus" class="status"></p>
       </section>
 
       <section class="panel" id="sec-voices">

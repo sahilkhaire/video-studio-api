@@ -25,6 +25,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { VideoService } from './video.service';
 import { QueueService } from '../queue/queue.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
+import { GenerateContentImagesVideoRequestDto } from '../../domain/dto/generate-content-images-video.dto';
 import { GenerateMusicVideoRequestDto } from '../../domain/dto/generate-music-video.dto';
 import {
   IEnqueueJobResponse,
@@ -72,6 +73,23 @@ export class VideoController {
       aspectRatio: dto.aspectRatio,
       fps: dto.fps,
     });
+  }
+
+  @Post('generate-from-content-images')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 4 } })
+  @ApiOperation({
+    summary: 'Generate final video from provided content segments and image URLs',
+    description:
+      'Creates narration using free Edge TTS for each segment and displays all provided images evenly during playback. Can optionally overlay captions.',
+  })
+  @ApiBody({ type: GenerateContentImagesVideoRequestDto })
+  @ApiResponse({ status: 200, description: 'Video generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request payload' })
+  async generateFromContentImages(
+    @Body() dto: GenerateContentImagesVideoRequestDto,
+  ) {
+    return this.videoService.generateVideoFromContentImages(dto);
   }
 
   @Post('generate-music-story')

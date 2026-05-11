@@ -17,6 +17,7 @@ import {
 } from '../../domain/interfaces/video-job.interface';
 import { VideoPlatform, VideoStyle } from '../../domain/enums/video.enums';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
+import { VideoAspectRatio } from '../../domain/interfaces/rendering.interface';
 
 describe('VideoController', () => {
   let controller: VideoController;
@@ -156,6 +157,54 @@ describe('VideoController', () => {
 
       // Assert
       expect(result).toEqual({ script: 'openai', image: 'dalle', tts: 'openai' });
+    });
+  });
+
+  describe('generateFromContentImages', () => {
+    it('should delegate request to VideoService', async () => {
+      const response = {
+        video: {
+          videoPath: '/storage/generated.mp4',
+          width: 1280,
+          height: 720,
+          duration: 12,
+          fps: 30,
+          fileSize: 1024,
+          format: 'mp4',
+        },
+        title: 'Content and Images Video',
+        description: 'Generated from user-provided content segments and image lists.',
+        totalScenes: 2,
+        scriptProvider: 'user-input',
+        imageProvider: 'user-input',
+        audioProvider: 'edge-tts',
+        generatedAt: new Date(),
+      };
+
+      (mockVideoService as unknown as { generateVideoFromContentImages: jest.Mock }).generateVideoFromContentImages = jest
+        .fn()
+        .mockResolvedValueOnce(response);
+
+      const payload = {
+        data: [
+          {
+            content: 'Intro narration',
+            images: ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+          },
+        ],
+        showCaptions: true,
+        resolution: VideoResolution.HD_720P,
+        aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
+        fps: 30,
+      };
+
+      const result = await controller.generateFromContentImages(payload);
+
+      expect(
+        (mockVideoService as unknown as { generateVideoFromContentImages: jest.Mock })
+          .generateVideoFromContentImages,
+      ).toHaveBeenCalledWith(payload);
+      expect(result).toEqual(response);
     });
   });
 });

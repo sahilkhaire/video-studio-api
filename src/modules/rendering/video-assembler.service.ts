@@ -23,6 +23,7 @@ export interface IAssembleVideoOptions {
   fps: number;
   outputPath?: string;
   backgroundAudioPath?: string;
+  transitionsEnabled?: boolean;
 }
 
 interface ISceneClip {
@@ -84,7 +85,7 @@ export class VideoAssemblerService {
       options.outputPath ?? join(outputDir, `video-${uuidv4()}.mp4`),
     );
 
-    const motionConfig = this.getMotionConfig();
+    const motionConfig = this.getMotionConfig(options.transitionsEnabled);
 
     // Step 1: Build scene clips with subtle motion from static frames
     const sceneClips = await this.createSceneClips(sortedFrames, fps, tempDir, motionConfig);
@@ -473,10 +474,15 @@ export class VideoAssemblerService {
     }
   }
 
-  private getMotionConfig(): IMotionConfig {
+  private getMotionConfig(transitionsEnabledOverride?: boolean): IMotionConfig {
+    const defaultTransitionsEnabled = this.configService.get<boolean>(
+      'video.motion.transitionsEnabled',
+      true,
+    );
+
     return {
       enabled: this.configService.get<boolean>('video.motion.enabled', true),
-      transitionsEnabled: this.configService.get<boolean>('video.motion.transitionsEnabled', true),
+      transitionsEnabled: transitionsEnabledOverride ?? defaultTransitionsEnabled,
       zoomMin: this.configService.get<number>('video.motion.zoomMin', 1.0),
       zoomMax: this.configService.get<number>('video.motion.zoomMax', 1.12),
       panIntensity: this.configService.get<number>('video.motion.panIntensity', 0.035),

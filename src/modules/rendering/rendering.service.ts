@@ -53,6 +53,7 @@ export class RenderingService {
       fps,
       outputPath,
       backgroundAudioPath: request.backgroundAudioPath,
+      transitionsEnabled: request.transitionsEnabled,
     });
 
     this.logger.log(

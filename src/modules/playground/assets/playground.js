@@ -81,6 +81,16 @@ const refs = {
   musicSourceTabs: document.getElementById('musicSourceTabs'),
   enqueueMusicBtn: document.getElementById('enqueueMusicBtn'),
   musicStatus: document.getElementById('musicStatus'),
+  // Content + Images video
+  contentImagesShowCaptions: document.getElementById('contentImagesShowCaptions'),
+  contentImagesVoice: document.getElementById('contentImagesVoice'),
+  contentImagesStyle: document.getElementById('contentImagesStyle'),
+  contentImagesResolution: document.getElementById('contentImagesResolution'),
+  contentImagesAspectRatio: document.getElementById('contentImagesAspectRatio'),
+  contentImagesFps: document.getElementById('contentImagesFps'),
+  contentImagesData: document.getElementById('contentImagesData'),
+  generateContentImagesBtn: document.getElementById('generateContentImagesBtn'),
+  contentImagesStatus: document.getElementById('contentImagesStatus'),
 };
 
 function setStatus(message, level) {
@@ -150,6 +160,31 @@ function setMenuActive(targetId) {
       btn.classList.remove('active');
     }
   });
+}
+
+function setContentImagesStatus(message, level) {
+  refs.contentImagesStatus.textContent = message;
+  refs.contentImagesStatus.className = 'status ' + (level || 'good');
+}
+
+function getContentImagesPayload() {
+  const parsedData = JSON.parse(refs.contentImagesData.value || '[]');
+  if (!Array.isArray(parsedData) || parsedData.length === 0) {
+    throw new Error('Data must be a non-empty JSON array.');
+  }
+
+  const payload = {
+    data: parsedData,
+    showCaptions: refs.contentImagesShowCaptions.value === 'true',
+    style: refs.contentImagesStyle.value,
+    resolution: refs.contentImagesResolution.value,
+    aspectRatio: refs.contentImagesAspectRatio.value,
+    fps: Number(refs.contentImagesFps.value || '30'),
+  };
+
+  const voice = refs.contentImagesVoice.value.trim();
+  if (voice) payload.voice = voice;
+  return payload;
 }
 
 function formatDate(value) {
@@ -379,6 +414,26 @@ refs.mongoDetailsBtn.addEventListener('click', async () => {
 
 refs.samplePreset.value = '0';
 applySample(samples[0]);
+refs.contentImagesData.value = JSON.stringify(
+  [
+    {
+      content: 'Validation beats assumptions. Start by testing demand before building a full product.',
+      images: [
+        'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg',
+        'https://images.pexels.com/photos/1181396/pexels-photo-1181396.jpeg',
+      ],
+    },
+    {
+      content: 'Collect feedback quickly, iterate the idea, and keep your next experiment small and measurable.',
+      images: [
+        'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg',
+        'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg',
+      ],
+    },
+  ],
+  null,
+  2,
+);
 
 // ── Music Story tab switching ─────────────────────────────────────────────────
 
@@ -489,6 +544,30 @@ refs.enqueueMusicBtn.addEventListener('click', async () => {
     writeOutput(result);
   } catch (error) {
     setMusicStatus('Failed to enqueue music story job.', 'bad');
+    writeOutput(error);
+  }
+});
+
+refs.generateContentImagesBtn.addEventListener('click', async () => {
+  let payload;
+  try {
+    payload = getContentImagesPayload();
+  } catch (error) {
+    setContentImagesStatus(error.message || 'Invalid JSON payload.', 'bad');
+    return;
+  }
+
+  try {
+    setContentImagesStatus('Generating final video from content and images...', 'warn');
+    writeOutput({ request: payload });
+    const result = await callApi('/api/videos/generate-from-content-images', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    setContentImagesStatus('Video generated successfully.', 'good');
+    writeOutput(result);
+  } catch (error) {
+    setContentImagesStatus('Failed to generate content + images video.', 'bad');
     writeOutput(error);
   }
 });

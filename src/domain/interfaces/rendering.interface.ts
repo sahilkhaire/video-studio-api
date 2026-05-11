@@ -98,4 +98,5 @@ export interface IRenderVideoRequest {
   outputPath?: string;
   showCaptions?: boolean;
   backgroundAudioPath?: string;
+  transitionsEnabled?: boolean;
 }
