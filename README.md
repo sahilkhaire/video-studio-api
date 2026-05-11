@@ -15,6 +15,16 @@ Video Studio API generates complete videos from a topic by orchestrating:
 
 The system supports provider switching, Redis-backed caching, MongoDB persistence, and a dedicated optional playground UI.
 
+## Generated Video Showcase
+
+Sample outputs currently present in this repository workspace:
+
+| Use Case | Output File |
+| --- | --- |
+| Content-to-video sample | [video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4](artifacts/videos/video-1d686ff8-e7a2-49fd-8a19-7c59df509893.mp4) |
+| Content-to-video sample | [video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4](artifacts/videos/video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4) |
+
+
 ## Current Highlights
 
 - Async generation pipeline with BullMQ workers
@@ -83,11 +93,22 @@ npm run start:dev
 ### Core
 
 - `POST /api/videos/generate` : enqueue video generation job
+- `POST /api/videos/generate-from-content-images` : generate final video directly from provided content + image segments (synchronous)
 - `POST /api/videos/generate-music-story` : enqueue visual-only storytelling job from a song (creates YouTube + Reels variants in one job)
 - `GET /api/videos/jobs/:jobId` : fetch job status/result
 - `GET /api/videos/providers` : active providers
 - `GET /api/videos/tts-voices` : voices for active TTS provider
 - `GET /api/videos/mongo-details` : recent MongoDB records (jobs + costs)
+
+### Generation Modes
+
+- Queue-based async routes:
+  - `POST /api/videos/generate`
+  - `POST /api/videos/generate-music-story`
+  - Returns `jobId` immediately. Use `GET /api/videos/jobs/:jobId` for progress/result.
+- Direct synchronous route:
+  - `POST /api/videos/generate-from-content-images`
+  - Returns full generation result immediately in the response.
 
 ### System
 
@@ -106,6 +127,15 @@ ENABLE_PLAYGROUND_UI=true
 ```
 
 When disabled, `/api/ui` returns 404.
+
+Current playground capabilities:
+
+- Standard generation form (`/api/videos/generate`)
+- Music visual story form (`/api/videos/generate-music-story`)
+- Content + images form (`/api/videos/generate-from-content-images`)
+- Callback URL input support for all generation flows
+- Provider and voice inspection helpers
+- Job status polling and MongoDB details views
 
 ## Music Visual Story Route
 
@@ -140,6 +170,75 @@ Example JSON request (path/url mode):
 ```
 
 Result is available via `GET /api/videos/jobs/:jobId` and includes both output variants when completed.
+
+## Content + Images Route
+
+Route for building a final video from user-provided segment data.
+
+- Route: `POST /api/videos/generate-from-content-images`
+- Input: `data: [{ content: string, images: string[] }]`
+- Audio: generated with free Edge TTS per content segment
+- Image timing: evenly distributed across images for each segment
+- Captions: optional (`showCaptions`, alias `showCaption`)
+- Mode: synchronous (returns final result directly)
+
+Example request:
+
+```json
+{
+  "data": [
+    {
+      "content": "Validation beats assumptions. Test demand first.",
+      "images": [
+        "https://example.com/one.jpg",
+        "https://example.com/two.jpg"
+      ]
+    }
+  ],
+  "showCaptions": true,
+  "voice": "en-US-AriaNeural",
+  "resolution": "720p",
+  "aspectRatio": "16:9",
+  "fps": 30
+}
+```
+
+## Callback URL Support
+
+All generation routes support optional `callbackUrl`.
+
+- Supported routes:
+  - `POST /api/videos/generate`
+  - `POST /api/videos/generate-music-story`
+  - `POST /api/videos/generate-from-content-images`
+- On successful generation, the server sends `POST` to `callbackUrl`.
+- Callback delivery failures are logged and do not fail the generation job.
+
+Standard callback payload:
+
+```json
+{
+  "jobId": "f5b4b0f1-91b6-4a47-8c0c-d6d3d5f77241",
+  "status": "completed",
+  "videoUrl": "/path/to/generated/video.mp4"
+}
+```
+
+Music visual story callback payload includes variant URLs:
+
+```json
+{
+  "jobId": "f5b4b0f1-91b6-4a47-8c0c-d6d3d5f77241",
+  "status": "completed",
+  "videoUrl": "/path/to/youtube-variant.mp4",
+  "videoUrls": [
+    "/path/to/youtube-variant.mp4",
+    "/path/to/reels-variant.mp4"
+  ]
+}
+```
+
+Note: with local storage, `videoUrl` may be a local/server path. With cloud storage providers, it can be a public or signed URL based on provider behavior.
 
 ## Aspect Ratio Behavior
 
