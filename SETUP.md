@@ -9,32 +9,25 @@
 
 ## Quick Start
 
-### For Full Stack (Backend + Frontend)
+### Backend Only From Repository Root
 
 ```bash
 npm install
+source ~/.nvm/nvm.sh
+nvm use 20
 npm run start:dev
-```
-
-- Backend: `http://localhost:3000`
-- Frontend: `http://localhost:5173`
-
-### For Backend Only
-
-```bash
-npm install
-npm run dev:backend
 ```
 
 - Backend API: `http://localhost:3000/api`
 - Swagger docs: `http://localhost:3000/api/docs` (non-production only)
 - Optional Playground UI: `http://localhost:3000/api/ui` (if `ENABLE_PLAYGROUND_UI=true`)
 
-### For Frontend Only
+### Frontend Only From apps/frontend
 
 ```bash
+cd apps/frontend
 npm install
-npm run dev:frontend
+npm run dev
 ```
 
 Configure your backend URL in `apps/frontend/.env.local`:
@@ -65,7 +58,7 @@ nvm use 20
 n 20
 ```
 
-### 3. Install Project Dependencies
+### 3. Install Backend Dependencies
 
 ```bash
 npm install
@@ -81,7 +74,6 @@ Edit `.env` and add your API keys:
 ```env
 OPENAI_API_KEY=sk-your-key-here
 GROQ_API_KEY=gsk-your-key-here
-VITE_API_URL=http://localhost:3000/api
 ```
 
 To use Groq for TTS as well:
@@ -106,13 +98,21 @@ EOF
 ### 5. Start Infrastructure
 
 ```bash
-docker-compose up -d redis postgres
+docker compose up -d redis mongodb
 ```
 
-### 6. Run Development Server
+### 6. Run Backend Development Server
 
 ```bash
 npm run start:dev
+```
+
+### 7. Run Frontend Development Server
+
+```bash
+cd apps/frontend
+npm install
+npm run dev
 ```
 
 ## Linux Setup
@@ -130,7 +130,7 @@ sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-de
 sudo yum install -y gcc-c++ cairo-devel pango-devel libjpeg-turbo-devel giflib-devel
 ```
 
-Then follow steps 2-6 from macOS setup.
+Then follow the backend/frontend run steps from the macOS setup.
 
 ## Windows Setup
 
@@ -150,7 +150,7 @@ Then follow steps 2-6 from macOS setup.
    - Download from: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer
    - Install to default location
 
-3. Follow steps 2-6 from macOS setup
+3. Follow the backend/frontend run steps from the macOS setup
 
 ## Docker Setup (Easiest - No Dependencies)
 
@@ -158,7 +158,7 @@ Then follow steps 2-6 from macOS setup.
 
 ```bash
 # Start all services including frontend
-docker-compose up -d --profile frontend
+docker compose up -d --profile frontend
 
 # Access:
 # - Frontend: http://localhost:5173
@@ -170,7 +170,7 @@ docker-compose up -d --profile frontend
 ### Backend Only
 
 ```bash
-docker-compose up -d
+docker compose up -d
 
 # Access:
 # - Backend API: http://localhost:3000/api
@@ -181,7 +181,7 @@ docker-compose up -d
 ### Backend + Bull Board (Queue Monitoring)
 
 ```bash
-docker-compose up -d --profile dev
+docker compose up -d --profile dev
 
 # Access:
 # - Backend API: http://localhost:3000/api
@@ -193,7 +193,7 @@ docker-compose up -d --profile dev
 ### All Services
 
 ```bash
-docker-compose up -d --profile frontend --profile dev
+docker compose up -d --profile frontend --profile dev
 ```
 
 ## Troubleshooting
@@ -241,7 +241,7 @@ PORT=3001
 docker ps | grep redis
 
 # Or start Redis manually
-docker-compose up -d redis
+docker compose up -d redis
 
 # Test connection
 redis-cli ping
@@ -269,9 +269,6 @@ sudo apt-get install ffmpeg
 # Should compile without errors
 npm run build
 
-# Should build both backend and frontend
-npm run build:all
-
 # Should pass
 npm run lint
 
@@ -283,7 +280,7 @@ npm run test
 
 ```bash
 # Start backend
-npm run dev:backend
+npm run start:dev
 
 # In another terminal
 curl http://localhost:3000/api/health
@@ -295,8 +292,9 @@ curl http://localhost:3000/api/health
 ### 3. Test Frontend
 
 ```bash
-# Start frontend and backend
-npm run start:dev
+# Start frontend from its own directory
+cd apps/frontend
+npm run dev
 
 # Frontend loads at http://localhost:5173
 # Check browser console for any errors
