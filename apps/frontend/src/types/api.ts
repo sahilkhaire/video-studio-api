@@ -62,6 +62,7 @@ export interface VideoJob {
     videoUrl?: string;
     duration?: number;
     size?: number;
+    error?: string;
   };
   createdAt: string;
   updatedAt: string;

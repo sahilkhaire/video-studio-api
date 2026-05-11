@@ -367,7 +367,7 @@ class APIClient {
   // Job status endpoint
   async getJobStatus(jobId: string): Promise<VideoJob> {
     const { data } = await this.client.get(`/videos/jobs/${jobId}`);
-    return data;
+    return this.normalizeVideoJob(data);
   }
 
   // Providers endpoint
