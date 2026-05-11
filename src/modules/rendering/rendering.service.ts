@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { promises as fs } from 'fs';
 import { FrameComposerService } from './frame-composer.service';
 import { VideoAssemblerService } from './video-assembler.service';
 import {
@@ -35,31 +36,35 @@ export class RenderingService {
     // Phase 1: Compose one frame image per scene (in parallel)
     const frames = await this.composeAllFrames(request, resolutionSpec, fps);
 
-    // Phase 2: Build audio track map aligned with scene order
-    const audioTracks = script.scenes.map((scene) => {
-      const assets = sceneAssets.find((a) => a.sceneId === scene.id);
-      return {
-        sceneId: scene.id,
-        sequenceNumber: scene.sequenceNumber,
-        transition: scene.transition,
-        audio: assets?.audio,
-      };
-    });
+    try {
+      // Phase 2: Build audio track map aligned with scene order
+      const audioTracks = script.scenes.map((scene) => {
+        const assets = sceneAssets.find((a) => a.sceneId === scene.id);
+        return {
+          sceneId: scene.id,
+          sequenceNumber: scene.sequenceNumber,
+          transition: scene.transition,
+          audio: assets?.audio,
+        };
+      });
 
-    // Phase 3: Assemble frames + audio into the final video
-    const renderedVideo = await this.videoAssembler.assembleVideo({
-      frames,
-      audioTracks,
-      fps,
-      outputPath,
-      backgroundAudioPath: request.backgroundAudioPath,
-      transitionsEnabled: request.transitionsEnabled,
-    });
+      // Phase 3: Assemble frames + audio into the final video
+      const renderedVideo = await this.videoAssembler.assembleVideo({
+        frames,
+        audioTracks,
+        fps,
+        outputPath,
+        backgroundAudioPath: request.backgroundAudioPath,
+        transitionsEnabled: request.transitionsEnabled,
+      });
 
-    this.logger.log(
-      `Render complete: ${renderedVideo.videoPath} (${renderedVideo.duration.toFixed(1)}s)`,
-    );
-    return renderedVideo;
+      this.logger.log(
+        `Render complete: ${renderedVideo.videoPath} (${renderedVideo.duration.toFixed(1)}s)`,
+      );
+      return renderedVideo;
+    } finally {
+      await this.cleanupComposedFrames(frames);
+    }
   }
 
   private async composeAllFrames(
@@ -96,5 +101,10 @@ export class RenderingService {
     }
 
     return frames;
+  }
+
+  private async cleanupComposedFrames(frames: IComposedFrame[]): Promise<void> {
+    const paths = frames.flatMap((frame) => [frame.framePath, frame.captionPath].filter(Boolean));
+    await Promise.allSettled(paths.map((filePath) => fs.unlink(filePath!)));
   }
 }

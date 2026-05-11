@@ -223,28 +223,32 @@ export class VideoService {
       generatedAt,
     };
 
-    const video = await this.renderingService.renderVideo({
-      script,
-      sceneAssets,
-      resolution,
-      aspectRatio,
-      fps,
-      showCaptions: request.showCaptions ?? request.showCaption,
-      transitionsEnabled: false,
-    });
+    try {
+      const video = await this.renderingService.renderVideo({
+        script,
+        sceneAssets,
+        resolution,
+        aspectRatio,
+        fps,
+        showCaptions: request.showCaptions ?? request.showCaption,
+        transitionsEnabled: false,
+      });
 
-    this.logger.log(`Content-image video generation complete — ${video.videoPath}`);
+      this.logger.log(`Content-image video generation complete — ${video.videoPath}`);
 
-    return {
-      video,
-      title: script.title,
-      description: script.description,
-      totalScenes: scenes.length,
-      scriptProvider: 'user-input',
-      imageProvider: 'user-input',
-      audioProvider: edgeTtsProvider.getProviderName(),
-      generatedAt,
-    };
+      return {
+        video,
+        title: script.title,
+        description: script.description,
+        totalScenes: scenes.length,
+        scriptProvider: 'user-input',
+        imageProvider: 'user-input',
+        audioProvider: edgeTtsProvider.getProviderName(),
+        generatedAt,
+      };
+    } finally {
+      await this.cleanupFiles(generatedAudio.map((audio) => audio.filePath));
+    }
   }
 
   getActiveProviders(): { script: string; image: string; tts: string } {
@@ -256,7 +260,8 @@ export class VideoService {
   }
 
   async generateMusicVisualStory(request: IMusicVideoJobData): Promise<IMusicVideoJobResult> {
-    const musicPath = await this.resolveMusicSource(request);
+    const musicSource = await this.resolveMusicSource(request);
+    const musicPath = musicSource.path;
     const musicDuration = await this.getAudioDurationSeconds(musicPath);
     const targetDuration = Math.max(15, Math.round(musicDuration));
 
@@ -283,64 +288,70 @@ export class VideoService {
     const youtubeResolution = request.youtubeResolution ?? VideoResolution.FULL_HD_1080P;
     const reelsResolution = request.reelsResolution ?? VideoResolution.FULL_HD_1080P;
 
-    const [youtubeVideo, reelsVideo] = await Promise.all([
-      this.renderingService.renderVideo({
-        script,
-        sceneAssets,
-        resolution: youtubeResolution,
-        aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
-        fps,
-        showCaptions: false,
-        backgroundAudioPath: musicPath,
-      }),
-      this.renderingService.renderVideo({
-        script,
-        sceneAssets,
-        resolution: reelsResolution,
-        aspectRatio: VideoAspectRatio.PORTRAIT_9_16,
-        fps,
-        showCaptions: false,
-        backgroundAudioPath: musicPath,
-      }),
-    ]);
+    try {
+      const [youtubeVideo, reelsVideo] = await Promise.all([
+        this.renderingService.renderVideo({
+          script,
+          sceneAssets,
+          resolution: youtubeResolution,
+          aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
+          fps,
+          showCaptions: false,
+          backgroundAudioPath: musicPath,
+        }),
+        this.renderingService.renderVideo({
+          script,
+          sceneAssets,
+          resolution: reelsResolution,
+          aspectRatio: VideoAspectRatio.PORTRAIT_9_16,
+          fps,
+          showCaptions: false,
+          backgroundAudioPath: musicPath,
+        }),
+      ]);
 
-    const variants: IMusicVideoVariantResult[] = [
-      {
-        platform: VideoPlatform.YOUTUBE,
-        aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
-        resolution: youtubeResolution,
-        videoPath: youtubeVideo.videoPath,
-        duration: youtubeVideo.duration,
-        width: youtubeVideo.width,
-        height: youtubeVideo.height,
-        fps: youtubeVideo.fps,
-        fileSize: youtubeVideo.fileSize,
-      },
-      {
-        platform: VideoPlatform.INSTAGRAM_REELS,
-        aspectRatio: VideoAspectRatio.PORTRAIT_9_16,
-        resolution: reelsResolution,
-        videoPath: reelsVideo.videoPath,
-        duration: reelsVideo.duration,
-        width: reelsVideo.width,
-        height: reelsVideo.height,
-        fps: reelsVideo.fps,
-        fileSize: reelsVideo.fileSize,
-      },
-    ];
+      const variants: IMusicVideoVariantResult[] = [
+        {
+          platform: VideoPlatform.YOUTUBE,
+          aspectRatio: VideoAspectRatio.LANDSCAPE_16_9,
+          resolution: youtubeResolution,
+          videoPath: youtubeVideo.videoPath,
+          duration: youtubeVideo.duration,
+          width: youtubeVideo.width,
+          height: youtubeVideo.height,
+          fps: youtubeVideo.fps,
+          fileSize: youtubeVideo.fileSize,
+        },
+        {
+          platform: VideoPlatform.INSTAGRAM_REELS,
+          aspectRatio: VideoAspectRatio.PORTRAIT_9_16,
+          resolution: reelsResolution,
+          videoPath: reelsVideo.videoPath,
+          duration: reelsVideo.duration,
+          width: reelsVideo.width,
+          height: reelsVideo.height,
+          fps: reelsVideo.fps,
+          fileSize: reelsVideo.fileSize,
+        },
+      ];
 
-    this.assertQualityGate(variants);
+      this.assertQualityGate(variants);
 
-    return {
-      mode: VideoJobType.MUSIC_VISUAL_STORY,
-      title: script.title,
-      description: script.description,
-      totalScenes: script.scenes.length,
-      variants,
-      scriptProvider: request.scriptProvider ?? this.contentService.getActiveProviders().script,
-      imageProvider: request.imageProvider ?? this.contentService.getActiveProviders().image,
-      generatedAt: new Date(),
-    };
+      return {
+        mode: VideoJobType.MUSIC_VISUAL_STORY,
+        title: script.title,
+        description: script.description,
+        totalScenes: script.scenes.length,
+        variants,
+        scriptProvider: request.scriptProvider ?? this.contentService.getActiveProviders().script,
+        imageProvider: request.imageProvider ?? this.contentService.getActiveProviders().image,
+        generatedAt: new Date(),
+      };
+    } finally {
+      if (musicSource.shouldCleanup) {
+        await this.cleanupFiles([musicPath]);
+      }
+    }
   }
 
   async getMongoDetails(jobLimit = 50, costLimit = 100): Promise<IMongoDetailsResponse> {
@@ -440,15 +451,17 @@ export class VideoService {
     return results;
   }
 
-  private async resolveMusicSource(request: IMusicVideoJobData): Promise<string> {
+  private async resolveMusicSource(
+    request: IMusicVideoJobData,
+  ): Promise<{ path: string; shouldCleanup: boolean }> {
     if (request.uploadedMusicPath) {
-      return resolve(request.uploadedMusicPath);
+      return { path: resolve(request.uploadedMusicPath), shouldCleanup: true };
     }
 
     if (request.musicPath) {
       const localPath = resolve(request.musicPath);
       await fs.access(localPath);
-      return localPath;
+      return { path: localPath, shouldCleanup: false };
     }
 
     if (request.musicUrl) {
@@ -457,7 +470,7 @@ export class VideoService {
       const extension = request.musicUrl.toLowerCase().includes('.wav') ? 'wav' : 'mp3';
       const outputPath = join(tempDir, `music-source-${uuidv4()}.${extension}`);
       await this.downloadToFile(request.musicUrl, outputPath);
-      return outputPath;
+      return { path: outputPath, shouldCleanup: true };
     }
 
     throw new Error('Music source is required');
@@ -533,5 +546,10 @@ export class VideoService {
       return ImageFormat.WEBP;
     }
     return ImageFormat.PNG;
+  }
+
+  private async cleanupFiles(paths: Array<string | undefined>): Promise<void> {
+    const safePaths = paths.filter((path): path is string => Boolean(path));
+    await Promise.allSettled(safePaths.map((filePath) => fs.unlink(filePath)));
   }
 }
