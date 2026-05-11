@@ -54,6 +54,76 @@ Fallback link: [video-c20fa10a-d5e5-4770-bb42-55de99edc3ea.mp4](artifacts/videos
 
 ## Quick Start
 
+### Project Layout (Isolated Runtime)
+
+- `src/` and root config files: backend only (NestJS API)
+- `apps/frontend/`: dedicated React + Vite app with its own dependencies and run commands
+
+### Run Backend (from repository root)
+
+```bash
+npm install
+npm run start:dev
+```
+
+Backend base URL: `http://localhost:3000/api`
+
+Swagger docs (non-production): `http://localhost:3000/api/docs`
+
+Optional playground UI: `http://localhost:3000/api/ui` (if `ENABLE_PLAYGROUND_UI=true`)
+
+### Run Frontend (from apps/frontend)
+
+```bash
+cd apps/frontend
+npm install
+npm run dev
+```
+
+Frontend default URL: `http://localhost:5173`
+
+If 5173 is occupied, Vite may select another port.
+
+Configure backend URL in `apps/frontend/.env.local`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_API_KEY=
+```
+
+### Docker Compose
+
+#### **Both Backend + Frontend:**
+
+```bash
+docker compose up -d --profile frontend
+```
+
+Services:
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
+- Redis: `localhost:6379`
+- MongoDB: `localhost:27017`
+
+#### **Backend Only:**
+
+```bash
+docker compose up -d
+```
+
+Services:
+- Backend: `http://localhost:3000`
+- Redis: `localhost:6379`
+- MongoDB: `localhost:27017`
+
+#### **With Bull Board (queue monitoring):**
+
+```bash
+docker compose up -d --profile dev
+```
+
+Bull Board available at `http://localhost:3001`
+
 ### 1. Install dependencies
 
 ```bash
@@ -69,6 +139,7 @@ cp .env.example .env
 Set required keys (example):
 
 - `OPENAI_API_KEY` (if using OpenAI providers)
+- `GROQ_API_KEY` (if using Groq script or TTS provider)
 - `TOGETHER_API_KEY` (if using Together providers)
 - `ELEVENLABS_API_KEY` (if using ElevenLabs TTS)
 
@@ -81,13 +152,20 @@ docker compose up -d redis mongodb
 Optional:
 
 ```bash
-docker compose up -d bull-board
+docker compose up -d --profile dev
 ```
 
 ### 4. Run app
 
 ```bash
 npm run start:dev
+```
+
+For frontend development, run separately inside `apps/frontend`:
+
+```bash
+cd apps/frontend
+npm run dev
 ```
 
 ## API Base
@@ -157,7 +235,7 @@ Dedicated endpoint for your new use case: pure visual storytelling with song-onl
 - Narration/TTS: disabled
 - Audio track: original song only
 - Provider override support (per request)
-  - `scriptProvider` (e.g. `openai`, `together-ai`)
+  - `scriptProvider` (e.g. `openai`, `groq`, `together-ai`)
   - `imageProvider` (e.g. `dalle`, `together-ai`)
 
 Example JSON request (path/url mode):

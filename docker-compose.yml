@@ -23,6 +23,28 @@ services:
       - video-gen-network
     command: npm run start:dev
 
+  web:
+    profiles:
+      - frontend
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: video-gen-frontend
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      VITE_API_URL: http://app:3000/api
+    depends_on:
+      - app
+    networks:
+      - video-gen-network
+    command: npm run dev -- --host 0.0.0.0 --strictPort --port 5173
+
   redis:
     image: redis:7-alpine
     container_name: video-gen-redis
@@ -57,6 +79,8 @@ services:
 
   # Optional: Bull Board for queue monitoring
   bull-board:
+    profiles:
+      - dev
     image: deadly0/bull-board
     container_name: video-gen-bull-board
     ports:
@@ -76,3 +100,4 @@ networks:
 volumes:
   redis-data:
   mongodb-data:
+

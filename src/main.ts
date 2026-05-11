@@ -26,9 +26,28 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  // CORS
+  // CORS: keep backend/frontend isolated with explicit frontend origins in development.
+  const defaultDevOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    'http://localhost:5175',
+    'http://127.0.0.1:5175',
+  ];
+
+  const configuredCorsOrigin = configService.get<string>('CORS_ORIGIN', '').trim();
+
+  const corsOrigin = configuredCorsOrigin
+    ? configuredCorsOrigin === '*'
+      ? '*'
+      : configuredCorsOrigin.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : environment === 'production'
+      ? false
+      : defaultDevOrigins;
+
   app.enableCors({
-    origin: environment === 'production' ? configService.get('CORS_ORIGIN') : '*',
+    origin: corsOrigin,
     credentials: true,
   });
 

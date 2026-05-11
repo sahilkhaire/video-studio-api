@@ -32,5 +32,8 @@
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"]
     }
-  }
+  },
+  "include": ["src", "test"],
+  "exclude": ["node_modules", "dist", "apps", "apps/**", "artifacts", "media", "storage", "temp"]
 }
+

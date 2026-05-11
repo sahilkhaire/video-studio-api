@@ -6,6 +6,7 @@ import { DALLEImageProvider } from './providers/image/dalle-image.provider';
 import { StableDiffusionImageProvider } from './providers/image/stable-diffusion-image.provider';
 import { TogetherImageProvider } from './providers/image/together-image.provider';
 import { ClaudeScriptProvider } from './providers/script/claude-script.provider';
+import { GroqScriptProvider } from './providers/script/groq-script.provider';
 import { OllamaScriptProvider } from './providers/script/ollama-script.provider';
 import { OpenAIScriptProvider } from './providers/script/openai-script.provider';
 import { TogetherScriptProvider } from './providers/script/together-script.provider';
@@ -17,6 +18,7 @@ export class ProviderResolverService {
     private readonly claudeScriptProvider: ClaudeScriptProvider,
     private readonly ollamaScriptProvider: OllamaScriptProvider,
     private readonly togetherScriptProvider: TogetherScriptProvider,
+    private readonly groqScriptProvider: GroqScriptProvider,
     private readonly dalleImageProvider: DALLEImageProvider,
     private readonly stableDiffusionImageProvider: StableDiffusionImageProvider,
     private readonly togetherImageProvider: TogetherImageProvider,
@@ -30,6 +32,8 @@ export class ProviderResolverService {
         return this.ollamaScriptProvider;
       case ScriptProvider.TOGETHER_AI:
         return this.togetherScriptProvider;
+      case ScriptProvider.GROQ:
+        return this.groqScriptProvider;
       case ScriptProvider.OPENAI:
         return this.openaiScriptProvider;
       default:

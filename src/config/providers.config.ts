@@ -5,6 +5,7 @@ export enum ScriptProvider {
   CLAUDE = 'claude',
   OLLAMA = 'ollama',
   TOGETHER_AI = 'together-ai',
+  GROQ = 'groq',
 }
 
 export enum ImageProvider {
@@ -20,6 +21,7 @@ export enum TTSProvider {
   GOOGLE_TTS = 'google-tts',
   COQUI = 'coqui',
   EDGE_TTS = 'edge-tts',
+  GROQ = 'groq',
 }
 
 export default registerAs('providers', () => ({
@@ -81,6 +83,11 @@ export default registerAs('providers', () => ({
     maxAttempts: parseInt(process.env.TOGETHER_MAX_ATTEMPTS || '3', 10),
   },
 
+  // Groq Configuration
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+  },
+
   // Estimated cost per API call in USD (configurable via env vars)
   costs: {
     script: {
@@ -88,6 +95,7 @@ export default registerAs('providers', () => ({
       claude: parseFloat(process.env.COST_SCRIPT_CLAUDE ?? '0.02'),
       ollama: parseFloat(process.env.COST_SCRIPT_OLLAMA ?? '0.00'),
       'together-ai': parseFloat(process.env.COST_SCRIPT_TOGETHER ?? '0.002'),
+      groq: parseFloat(process.env.COST_SCRIPT_GROQ ?? '0.001'),
     },
     image: {
       dalle: parseFloat(process.env.COST_IMAGE_DALLE ?? '0.04'),
@@ -100,6 +108,7 @@ export default registerAs('providers', () => ({
       elevenlabs: parseFloat(process.env.COST_TTS_ELEVENLABS ?? '0.03'),
       'google-tts': parseFloat(process.env.COST_TTS_GOOGLE ?? '0.004'),
       coqui: parseFloat(process.env.COST_TTS_COQUI ?? '0.00'),
+      groq: parseFloat(process.env.COST_TTS_GROQ ?? '0.008'),
     },
   },
 }));

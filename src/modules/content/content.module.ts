@@ -7,12 +7,14 @@ import { OpenAIScriptProvider } from './providers/script/openai-script.provider'
 import { ClaudeScriptProvider } from './providers/script/claude-script.provider';
 import { OllamaScriptProvider } from './providers/script/ollama-script.provider';
 import { TogetherScriptProvider } from './providers/script/together-script.provider';
+import { GroqScriptProvider } from './providers/script/groq-script.provider';
 import { DALLEImageProvider } from './providers/image/dalle-image.provider';
 import { StableDiffusionImageProvider } from './providers/image/stable-diffusion-image.provider';
 import { TogetherImageProvider } from './providers/image/together-image.provider';
 import { OpenAITTSProvider } from './providers/tts/openai-tts.provider';
 import { ElevenLabsTTSProvider } from './providers/tts/elevenlabs-tts.provider';
 import { EdgeTTSProvider } from './providers/tts/edge-tts.provider';
+import { GroqTTSProvider } from './providers/tts/groq-tts.provider';
 import { IScriptGenerator } from '../../domain/interfaces/script-generator.interface';
 import { IImageGenerator } from '../../domain/interfaces/image-generator.interface';
 import { ITTSProvider } from '../../domain/interfaces/tts-provider.interface';
@@ -28,12 +30,14 @@ import { ProviderResolverService } from './provider-resolver.service';
     ClaudeScriptProvider,
     OllamaScriptProvider,
     TogetherScriptProvider,
+    GroqScriptProvider,
     DALLEImageProvider,
     StableDiffusionImageProvider,
     TogetherImageProvider,
     OpenAITTSProvider,
     ElevenLabsTTSProvider,
     EdgeTTSProvider,
+    GroqTTSProvider,
 
     // Script generator: resolved at startup based on SCRIPT_PROVIDER env var
     {
@@ -44,6 +48,7 @@ import { ProviderResolverService } from './provider-resolver.service';
         claude: ClaudeScriptProvider,
         ollama: OllamaScriptProvider,
         together: TogetherScriptProvider,
+        groq: GroqScriptProvider,
       ): IScriptGenerator => {
         const provider = configService.get<string>(
           'providers.script.provider',
@@ -56,6 +61,8 @@ import { ProviderResolverService } from './provider-resolver.service';
             return ollama;
           case ScriptProvider.TOGETHER_AI:
             return together;
+          case ScriptProvider.GROQ:
+            return groq;
           default:
             return openai;
         }
@@ -66,6 +73,7 @@ import { ProviderResolverService } from './provider-resolver.service';
         ClaudeScriptProvider,
         OllamaScriptProvider,
         TogetherScriptProvider,
+        GroqScriptProvider,
       ],
     },
 
@@ -104,6 +112,7 @@ import { ProviderResolverService } from './provider-resolver.service';
         openaiTts: OpenAITTSProvider,
         elevenlabs: ElevenLabsTTSProvider,
         edgeTts: EdgeTTSProvider,
+        groqTts: GroqTTSProvider,
       ): ITTSProvider => {
         const provider = configService.get<string>('providers.tts.provider', TTSProvider.OPENAI);
         switch (provider) {
@@ -111,11 +120,19 @@ import { ProviderResolverService } from './provider-resolver.service';
             return elevenlabs;
           case TTSProvider.EDGE_TTS:
             return edgeTts;
+          case TTSProvider.GROQ:
+            return groqTts;
           default:
             return openaiTts;
         }
       },
-      inject: [ConfigService, OpenAITTSProvider, ElevenLabsTTSProvider, EdgeTTSProvider],
+      inject: [
+        ConfigService,
+        OpenAITTSProvider,
+        ElevenLabsTTSProvider,
+        EdgeTTSProvider,
+        GroqTTSProvider,
+      ],
     },
 
     ProviderResolverService,

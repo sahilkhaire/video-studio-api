@@ -7,6 +7,45 @@
 - **Linux**: Install build tools and libraries
 - **Windows**: Use WSL2 or install build tools
 
+## Quick Start
+
+### For Full Stack (Backend + Frontend)
+
+```bash
+npm install
+npm run start:dev
+```
+
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
+
+### For Backend Only
+
+```bash
+npm install
+npm run dev:backend
+```
+
+- Backend API: `http://localhost:3000/api`
+- Swagger docs: `http://localhost:3000/api/docs` (non-production only)
+- Optional Playground UI: `http://localhost:3000/api/ui` (if `ENABLE_PLAYGROUND_UI=true`)
+
+### For Frontend Only
+
+```bash
+npm install
+npm run dev:frontend
+```
+
+Configure your backend URL in `apps/frontend/.env.local`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_API_KEY=optional-api-key
+```
+
+## Detailed Setup by Platform
+
 ## macOS Setup
 
 ### 1. Install Homebrew Dependencies
@@ -41,6 +80,27 @@ cp .env.example .env
 Edit `.env` and add your API keys:
 ```env
 OPENAI_API_KEY=sk-your-key-here
+GROQ_API_KEY=gsk-your-key-here
+VITE_API_URL=http://localhost:3000/api
+```
+
+To use Groq for TTS as well:
+```env
+TTS_PROVIDER=groq
+TTS_MODEL=playai-tts
+TTS_VOICE=Fritz-PlayAI
+```
+
+### 4.1 Configure Frontend (Optional)
+
+If running frontend, create `apps/frontend/.env.local`:
+
+```bash
+cd apps/frontend
+cp .env.example .env.local 2>/dev/null || cat > .env.local << 'EOF'
+VITE_API_URL=http://localhost:3000/api
+VITE_API_KEY=
+EOF
 ```
 
 ### 5. Start Infrastructure
@@ -94,12 +154,46 @@ Then follow steps 2-6 from macOS setup.
 
 ## Docker Setup (Easiest - No Dependencies)
 
-```bash
-# Start all services
-docker-compose up
+### Both Backend + Frontend
 
-# App will be at http://localhost:3000
-# Bull Board at http://localhost:3001
+```bash
+# Start all services including frontend
+docker-compose up -d --profile frontend
+
+# Access:
+# - Frontend: http://localhost:5173
+# - Backend API: http://localhost:3000/api
+# - Redis: localhost:6379
+# - MongoDB: localhost:27017
+```
+
+### Backend Only
+
+```bash
+docker-compose up -d
+
+# Access:
+# - Backend API: http://localhost:3000/api
+# - Redis: localhost:6379
+# - MongoDB: localhost:27017
+```
+
+### Backend + Bull Board (Queue Monitoring)
+
+```bash
+docker-compose up -d --profile dev
+
+# Access:
+# - Backend API: http://localhost:3000/api
+# - Bull Board: http://localhost:3001
+# - Redis: localhost:6379
+# - MongoDB: localhost:27017
+```
+
+### All Services
+
+```bash
+docker-compose up -d --profile frontend --profile dev
 ```
 
 ## Troubleshooting
@@ -175,6 +269,9 @@ sudo apt-get install ffmpeg
 # Should compile without errors
 npm run build
 
+# Should build both backend and frontend
+npm run build:all
+
 # Should pass
 npm run lint
 
@@ -182,11 +279,11 @@ npm run lint
 npm run test
 ```
 
-### 2. Test API
+### 2. Test Backend API
 
 ```bash
-# Start server
-npm run start:dev
+# Start backend
+npm run dev:backend
 
 # In another terminal
 curl http://localhost:3000/api/health
@@ -195,9 +292,20 @@ curl http://localhost:3000/api/health
 # {"status":"ok","timestamp":"...","uptime":0,"environment":"development"}
 ```
 
-### 3. Access Swagger Docs
+### 3. Test Frontend
 
-Open browser: http://localhost:3000/api/docs
+```bash
+# Start frontend and backend
+npm run start:dev
+
+# Frontend loads at http://localhost:5173
+# Check browser console for any errors
+# Try clicking through pages to verify API connectivity
+```
+
+### 4. Access Swagger Docs
+
+Open browser (backend only): http://localhost:3000/api/docs
 
 ## Production Deployment
 
