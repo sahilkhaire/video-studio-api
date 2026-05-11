@@ -89,6 +89,14 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
       await job.updateProgress(100);
       await this.videoJobRepository.updateProgress(job.id ?? '', 100);
       await this.videoJobRepository.markCompleted(job.id ?? '', musicResult);
+      if (musicData.callbackUrl) {
+        await this.videoService.notifyCallback(musicData.callbackUrl, {
+          jobId: job.id ?? '',
+          status: 'completed',
+          videoUrl: musicResult.variants[0]?.videoPath ?? '',
+          videoUrls: musicResult.variants.map((variant) => variant.videoPath),
+        });
+      }
       return musicResult;
     }
 
@@ -130,6 +138,13 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
     };
 
     await this.videoJobRepository.markCompleted(job.id ?? '', result);
+    if (standardData.callbackUrl) {
+      await this.videoService.notifyCallback(standardData.callbackUrl, {
+        jobId: job.id ?? '',
+        status: 'completed',
+        videoUrl: result.videoPath,
+      });
+    }
     return result;
   }
 }

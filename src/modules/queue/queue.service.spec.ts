@@ -13,6 +13,7 @@ const buildJobData = (): IVideoJobData => ({
   targetDuration: 30,
   resolution: VideoResolution.HD_720P,
   fps: 30,
+  callbackUrl: 'https://client.example.com/video-callback',
 });
 
 describe('QueueService', () => {

@@ -32,6 +32,7 @@ export interface IVideoJobData {
   resolution?: VideoResolution;
   aspectRatio?: VideoAspectRatio;
   fps?: number;
+  callbackUrl?: string;
 }
 
 export interface IMusicVideoJobData {
@@ -49,6 +50,7 @@ export interface IMusicVideoJobData {
   scriptProvider?: ScriptProvider;
   imageProvider?: ImageProvider;
   imageModel?: string;
+  callbackUrl?: string;
 }
 
 export type IVideoQueueJobData = IVideoJobData | IMusicVideoJobData;

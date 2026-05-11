@@ -118,4 +118,13 @@ export class GenerateContentImagesVideoRequestDto {
   @Min(24)
   @Max(60)
   fps?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional callback URL. On successful generation, server POSTs completion payload with jobId and videoUrl.',
+    example: 'https://client.example.com/webhooks/video-complete',
+  })
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
+  callbackUrl?: string;
 }

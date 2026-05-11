@@ -1,4 +1,13 @@
-import { IsEnum, IsOptional, IsNumber, IsString, Min, Max, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  IsString,
+  IsUrl,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IntersectionType } from '@nestjs/swagger';
 import { GenerateScriptRequestDto } from './generate-script.dto';
@@ -47,4 +56,13 @@ export class GenerateVideoRequestDto extends IntersectionType(GenerateScriptRequ
   })
   @IsOptional()
   showCaptions?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional callback URL. On successful generation, server POSTs completion payload with jobId and videoUrl.',
+    example: 'https://client.example.com/webhooks/video-complete',
+  })
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
+  callbackUrl?: string;
 }

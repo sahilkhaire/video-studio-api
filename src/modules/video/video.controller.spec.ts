@@ -38,6 +38,7 @@ describe('VideoController', () => {
       getActiveProviders: jest
         .fn()
         .mockReturnValue({ script: 'openai', image: 'dalle', tts: 'openai' }),
+      notifyCallback: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<VideoService>;
 
     mockQueueService = {
@@ -181,9 +182,9 @@ describe('VideoController', () => {
         generatedAt: new Date(),
       };
 
-      (mockVideoService as unknown as { generateVideoFromContentImages: jest.Mock }).generateVideoFromContentImages = jest
-        .fn()
-        .mockResolvedValueOnce(response);
+      (
+        mockVideoService as unknown as { generateVideoFromContentImages: jest.Mock }
+      ).generateVideoFromContentImages = jest.fn().mockResolvedValueOnce(response);
 
       const payload = {
         data: [
@@ -205,6 +206,50 @@ describe('VideoController', () => {
           .generateVideoFromContentImages,
       ).toHaveBeenCalledWith(payload);
       expect(result).toEqual(response);
+    });
+
+    it('should call callback URL for direct generation when callbackUrl is provided', async () => {
+      const response = {
+        video: {
+          videoPath: '/storage/generated.mp4',
+          width: 1280,
+          height: 720,
+          duration: 12,
+          fps: 30,
+          fileSize: 1024,
+          format: 'mp4',
+        },
+        title: 'Content and Images Video',
+        description: 'Generated from user-provided content segments and image lists.',
+        totalScenes: 2,
+        scriptProvider: 'user-input',
+        imageProvider: 'user-input',
+        audioProvider: 'edge-tts',
+        generatedAt: new Date(),
+      };
+
+      (
+        mockVideoService as unknown as { generateVideoFromContentImages: jest.Mock }
+      ).generateVideoFromContentImages = jest.fn().mockResolvedValueOnce(response);
+
+      await controller.generateFromContentImages({
+        data: [
+          {
+            content: 'Intro narration',
+            images: ['https://example.com/1.jpg'],
+          },
+        ],
+        callbackUrl: 'https://client.example.com/video-callback',
+      });
+
+      expect(mockVideoService.notifyCallback).toHaveBeenCalledWith(
+        'https://client.example.com/video-callback',
+        expect.objectContaining({
+          status: 'completed',
+          videoUrl: '/storage/generated.mp4',
+          jobId: expect.any(String),
+        }),
+      );
     });
   });
 });

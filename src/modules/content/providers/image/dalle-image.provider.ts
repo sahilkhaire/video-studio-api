@@ -27,7 +27,8 @@ export class DALLEImageProvider implements IImageGenerator {
     this.logger.log(`Generating image with DALL-E: "${request.prompt.slice(0, 60)}..."`);
 
     const client = this.getClient();
-    const model = request.model ?? this.configService.get<string>('providers.image.model', 'dall-e-3');
+    const model =
+      request.model ?? this.configService.get<string>('providers.image.model', 'dall-e-3');
     const size = request.size ?? ImageSize.SQUARE;
     const prompt = this.buildPrompt(request);
 
@@ -104,7 +105,10 @@ export class DALLEImageProvider implements IImageGenerator {
       [/\bconfronts?\b/gi, 'faces'],
       [/\bupset\b/gi, 'unhappy'],
     ];
-    return replacements.reduce((s, [pattern, replacement]) => s.replace(pattern, replacement), text);
+    return replacements.reduce(
+      (s, [pattern, replacement]) => s.replace(pattern, replacement),
+      text,
+    );
   }
 
   private parseDimensions(size: ImageSize): [number, number] {

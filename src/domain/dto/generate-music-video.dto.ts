@@ -108,6 +108,15 @@ export class GenerateMusicVideoRequestDto {
   fps?: number;
 
   @ApiPropertyOptional({
+    description:
+      'Optional callback URL. On successful generation, server POSTs completion payload with jobId and videoUrl.',
+    example: 'https://client.example.com/webhooks/video-complete',
+  })
+  @IsUrl({ require_protocol: true }, { message: 'callbackUrl must be a valid URL' })
+  @IsOptional()
+  callbackUrl?: string;
+
+  @ApiPropertyOptional({
     type: 'string',
     format: 'binary',
     description:

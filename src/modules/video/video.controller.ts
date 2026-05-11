@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { v4 as uuidv4 } from 'uuid';
 import { VideoService } from './video.service';
 import { QueueService } from '../queue/queue.service';
 import { GenerateVideoRequestDto } from '../../domain/dto/generate-video.dto';
@@ -72,6 +73,7 @@ export class VideoController {
       resolution: dto.resolution,
       aspectRatio: dto.aspectRatio,
       fps: dto.fps,
+      callbackUrl: dto.callbackUrl,
     });
   }
 
@@ -86,10 +88,18 @@ export class VideoController {
   @ApiBody({ type: GenerateContentImagesVideoRequestDto })
   @ApiResponse({ status: 200, description: 'Video generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request payload' })
-  async generateFromContentImages(
-    @Body() dto: GenerateContentImagesVideoRequestDto,
-  ) {
-    return this.videoService.generateVideoFromContentImages(dto);
+  async generateFromContentImages(@Body() dto: GenerateContentImagesVideoRequestDto) {
+    const result = await this.videoService.generateVideoFromContentImages(dto);
+
+    if (dto.callbackUrl) {
+      await this.videoService.notifyCallback(dto.callbackUrl, {
+        jobId: uuidv4(),
+        status: 'completed',
+        videoUrl: result.video.videoPath,
+      });
+    }
+
+    return result;
   }
 
   @Post('generate-music-story')
@@ -142,6 +152,7 @@ export class VideoController {
       scriptProvider: dto.scriptProvider,
       imageProvider: dto.imageProvider,
       imageModel: dto.imageModel,
+      callbackUrl: dto.callbackUrl,
     });
   }
 

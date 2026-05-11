@@ -66,6 +66,7 @@ describe('VideoProcessor', () => {
     mockVideoService = {
       generateVideo: jest.fn().mockResolvedValue(mockGenerationResult),
       getActiveProviders: jest.fn(),
+      notifyCallback: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<VideoService>;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -178,6 +179,24 @@ describe('VideoProcessor', () => {
         expect.objectContaining({
           targetAudience: 'students',
           additionalContext: 'focus on chlorophyll',
+        }),
+      );
+    });
+
+    it('should notify callback URL when job succeeds', async () => {
+      const job = makeJob({
+        ...jobData,
+        callbackUrl: 'https://client.example.com/video-callback',
+      });
+
+      await processor.process(job);
+
+      expect(mockVideoService.notifyCallback).toHaveBeenCalledWith(
+        'https://client.example.com/video-callback',
+        expect.objectContaining({
+          jobId: 'test-job-id',
+          status: 'completed',
+          videoUrl: '/storage/output.mp4',
         }),
       );
     });

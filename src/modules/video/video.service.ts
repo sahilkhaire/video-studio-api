@@ -259,6 +259,24 @@ export class VideoService {
     return this.contentService.getTtsVoices();
   }
 
+  async notifyCallback(callbackUrl: string, payload: Record<string, unknown>): Promise<void> {
+    try {
+      const response = await fetch(callbackUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Callback failed (${response.status}) for ${callbackUrl} — payload: ${JSON.stringify(payload)}`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(`Callback request failed for ${callbackUrl}: ${error}`);
+    }
+  }
+
   async generateMusicVisualStory(request: IMusicVideoJobData): Promise<IMusicVideoJobResult> {
     const musicSource = await this.resolveMusicSource(request);
     const musicPath = musicSource.path;
