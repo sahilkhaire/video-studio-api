@@ -6,7 +6,22 @@ import {
   ScriptGenerationException,
 } from '../exceptions/content-generation.exception';
 
-const buildHost = (url = '/api/videos/generate', method = 'POST') => {
+interface ITestResponse {
+  status: jest.Mock;
+  json: jest.Mock;
+}
+
+interface ITestRequest {
+  url: string;
+  method: string;
+}
+
+interface IBuildHostResult {
+  host: never;
+  response: ITestResponse;
+}
+
+const buildHost = (url = '/api/videos/generate', method = 'POST'): IBuildHostResult => {
   const mockResponse = {
     status: jest.fn().mockReturnThis(),
     json: jest.fn(),
@@ -14,9 +29,12 @@ const buildHost = (url = '/api/videos/generate', method = 'POST') => {
   const mockRequest = { url, method };
   return {
     host: {
-      switchToHttp: () => ({
-        getResponse: () => mockResponse,
-        getRequest: () => mockRequest,
+      switchToHttp: (): {
+        getResponse: () => ITestResponse;
+        getRequest: () => ITestRequest;
+      } => ({
+        getResponse: (): typeof mockResponse => mockResponse,
+        getRequest: (): typeof mockRequest => mockRequest,
       }),
     } as never,
     response: mockResponse,

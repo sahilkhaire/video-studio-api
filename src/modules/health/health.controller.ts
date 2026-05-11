@@ -6,6 +6,7 @@ import {
   DiskHealthIndicator,
   MemoryHealthIndicator,
   HealthCheckResult,
+  HealthIndicatorResult,
 } from '@nestjs/terminus';
 import { RedisHealthIndicator } from './indicators/redis-health.indicator';
 import { Public } from '../../common/decorators/public.decorator';
@@ -28,14 +29,14 @@ export class HealthController {
   @ApiResponse({ status: 503, description: 'One or more systems unhealthy' })
   check(): Promise<HealthCheckResult> {
     return this.health.check([
-      () => this.redisIndicator.isHealthy('redis'),
-      () =>
+      (): Promise<HealthIndicatorResult> => this.redisIndicator.isHealthy('redis'),
+      (): Promise<HealthIndicatorResult> =>
         this.disk.checkStorage('disk', {
           thresholdPercent: 0.9,
           path: process.platform === 'win32' ? 'C:\\' : '/',
         }),
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300 MB
-      () => this.memory.checkRSS('memory_rss', 512 * 1024 * 1024), // 512 MB
+      (): Promise<HealthIndicatorResult> => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300 MB
+      (): Promise<HealthIndicatorResult> => this.memory.checkRSS('memory_rss', 512 * 1024 * 1024), // 512 MB
     ]);
   }
 }

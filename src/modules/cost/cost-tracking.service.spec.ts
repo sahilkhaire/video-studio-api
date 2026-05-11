@@ -11,7 +11,14 @@ const makeRecord = (
     durationMs: number;
     success: boolean;
   }> = {},
-) => ({
+): {
+  provider: string;
+  contentType: ContentType;
+  estimatedCostUsd: number;
+  durationMs: number;
+  success: boolean;
+  timestamp: Date;
+} => ({
   provider: 'openai',
   contentType: ContentType.SCRIPT,
   estimatedCostUsd: 0.05,

@@ -34,7 +34,7 @@ import {
   VideoJobType,
 } from '../../domain/interfaces/video-job.interface';
 import { ITTSVoice } from '../../domain/interfaces/tts-provider.interface';
-import { IMongoDetailsResponse } from './video.service';
+import { IMongoDetailsResponse, IVideoGenerationResult } from './video.service';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
 
 interface IProvidersResponse {
@@ -88,7 +88,9 @@ export class VideoController {
   @ApiBody({ type: GenerateContentImagesVideoRequestDto })
   @ApiResponse({ status: 200, description: 'Video generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request payload' })
-  async generateFromContentImages(@Body() dto: GenerateContentImagesVideoRequestDto) {
+  async generateFromContentImages(
+    @Body() dto: GenerateContentImagesVideoRequestDto,
+  ): Promise<IVideoGenerationResult> {
     const result = await this.videoService.generateVideoFromContentImages(dto);
 
     if (dto.callbackUrl) {

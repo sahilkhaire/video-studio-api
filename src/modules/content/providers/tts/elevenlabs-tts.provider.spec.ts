@@ -103,7 +103,7 @@ describe('ElevenLabsTTSProvider', () => {
       await provider.generateAudio(validRequest);
 
       // Assert
-      const [url, _body, config] = axios.post.mock.calls[0] as [
+      const [url, , config] = axios.post.mock.calls[0] as [
         string,
         unknown,
         { headers: Record<string, string> },

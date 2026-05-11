@@ -13,7 +13,7 @@ describe('RedisHealthIndicator', () => {
   let mockPing: jest.Mock;
   let mockDisconnect: jest.Mock;
 
-  const setupMockClient = (pingRejects = false) => {
+  const setupMockClient = (pingRejects = false): void => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { createClient } = require('redis');
     mockConnect = jest.fn().mockResolvedValue(undefined);

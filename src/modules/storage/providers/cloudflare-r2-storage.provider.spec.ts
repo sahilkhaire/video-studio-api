@@ -36,7 +36,9 @@ describe('CloudflareR2StorageProvider', () => {
   let provider: CloudflareR2StorageProvider;
   let mockS3Send: jest.Mock;
 
-  const buildModule = async (extraConfig: Record<string, string> = {}) => {
+  const buildModule = async (
+    extraConfig: Record<string, string> = {},
+  ): Promise<CloudflareR2StorageProvider> => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { S3Client } = require('@aws-sdk/client-s3');
     mockS3Send = jest.fn().mockResolvedValue({});
