@@ -1,86 +1,154 @@
-import { useEffect, useState } from 'react';
-import { apiClient } from '../api/client';
-import { CostSummary } from '../types/api';
-import '../styles/page.css';
+import { useEffect, useMemo, useState } from "react"
+
+import { PageShell } from "@/components/dashboard/page-shell"
+import { StateMessage } from "@/components/dashboard/state-message"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { apiClient } from "../api/client"
+import { CostSummary } from "../types/api"
 
 export default function CostSummaryPage() {
-  const [costs, setCosts] = useState<CostSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [costs, setCosts] = useState<CostSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchCosts = async () => {
       try {
-        setLoading(true);
-        const data = await apiClient.getCostSummary();
-        setCosts(data);
+        setLoading(true)
+        const data = await apiClient.getCostSummary()
+        setCosts(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load costs');
+        setError(err instanceof Error ? err.message : "Failed to load costs")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchCosts();
-  }, []);
+    fetchCosts()
+  }, [])
 
-  if (loading) return <div className="page"><p>Loading costs...</p></div>;
-  if (error) return <div className="page error">{error}</div>;
-  if (!costs) return <div className="page"><p>No cost data available</p></div>;
+  const breakdownEntries = useMemo(() => {
+    if (!costs || !costs.breakdown) {
+      return []
+    }
 
-  const totalCostFormatted = costs.totalCost.toFixed(2);
-  const maxBreakdownCost = Math.max(...Object.values(costs.breakdown));
+    return Object.entries(costs.breakdown)
+      .filter(([, cost]) => Number.isFinite(cost))
+      .sort((a, b) => b[1] - a[1])
+  }, [costs])
+
+  const maxBreakdownCost = useMemo(() => {
+    if (breakdownEntries.length === 0) {
+      return 1
+    }
+
+    return Math.max(...breakdownEntries.map(([, cost]) => cost), 1)
+  }, [breakdownEntries])
+
+  if (loading) {
+    return (
+      <PageShell title="Cost Summary" description="Monitor spend by provider and job volume.">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+        <Skeleton className="h-80 rounded-xl" />
+      </PageShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <PageShell title="Cost Summary" description="Monitor spend by provider and job volume.">
+        <StateMessage variant="destructive" title="Cost summary unavailable" message={error} />
+      </PageShell>
+    )
+  }
+
+  if (!costs) {
+    return (
+      <PageShell title="Cost Summary" description="Monitor spend by provider and job volume.">
+        <StateMessage message="No cost data available yet." />
+      </PageShell>
+    )
+  }
+
+  const totalCost = Number.isFinite(costs.totalCost) ? costs.totalCost : 0
+  const jobCount = Number.isFinite(costs.jobCount) ? costs.jobCount : 0
+  const totalCostFormatted = totalCost.toFixed(2)
+  const averageCost = jobCount > 0 ? (totalCost / jobCount).toFixed(2) : "0.00"
 
   return (
-    <div className="page">
-      <h2>Cost Summary</h2>
+    <PageShell
+      title="Cost Summary"
+      description="Track total spend and provider-level contribution across generated jobs."
+    >
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Cost</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-heading text-3xl font-semibold tracking-tight">
+              {costs.currency} {totalCostFormatted}
+            </p>
+          </CardContent>
+        </Card>
 
-      <div className="cost-summary-card">
-        <div className="cost-header">
-          <h3>Total Cost</h3>
-          <div className="total-amount">
-            {costs.currency} {totalCostFormatted}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Jobs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-heading text-3xl font-semibold tracking-tight">{jobCount}</p>
+          </CardContent>
+        </Card>
 
-        <div className="cost-stats">
-          <div className="stat">
-            <span className="label">Total Jobs</span>
-            <span className="value">{costs.jobCount}</span>
-          </div>
-          <div className="stat">
-            <span className="label">Average Cost per Job</span>
-            <span className="value">
-              {costs.currency} {(costs.totalCost / costs.jobCount).toFixed(2)}
-            </span>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Average Cost / Job</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-heading text-3xl font-semibold tracking-tight">
+              {costs.currency} {averageCost}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <section>
-        <h3>Cost Breakdown by Provider</h3>
-        <div className="breakdown-list">
-          {Object.entries(costs.breakdown).map(([provider, cost]) => {
-            const percentage = (cost / maxBreakdownCost) * 100;
-            return (
-              <div key={provider} className="breakdown-item">
-                <div className="breakdown-header">
-                  <span className="provider-name">{provider}</span>
-                  <span className="cost-value">
-                    {costs.currency} {cost.toFixed(2)}
-                  </span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Cost Breakdown by Provider</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {breakdownEntries.length === 0 ? (
+            <StateMessage message="No provider breakdown available." />
+          ) : (
+            breakdownEntries.map(([provider, cost]) => {
+              const percentage = (cost / maxBreakdownCost) * 100
+
+              return (
+                <div key={provider} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{provider}</span>
+                    <span className="text-muted-foreground">
+                      {costs.currency} {cost.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="breakdown-bar">
-                  <div
-                    className="breakdown-fill"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
+              )
+            })
+          )}
+        </CardContent>
+      </Card>
+    </PageShell>
+  )
 }

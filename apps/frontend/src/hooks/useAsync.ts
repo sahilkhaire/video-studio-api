@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseAsyncState<T> {
   data: T | null;
@@ -65,20 +65,32 @@ export function usePolling<T>(
     }
   }, [asyncFunction]);
 
-  const [pollingId, setPollingId] = useState<ReturnType<typeof setInterval> | null>(null);
+  const pollingIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startPolling = useCallback(() => {
+    if (pollingIdRef.current) {
+      clearInterval(pollingIdRef.current);
+    }
+
     poll();
     const id = setInterval(poll, interval);
-    setPollingId(id);
+    pollingIdRef.current = id;
   }, [poll, interval]);
 
   const stopPolling = useCallback(() => {
-    if (pollingId) {
-      clearInterval(pollingId);
-      setPollingId(null);
+    if (pollingIdRef.current) {
+      clearInterval(pollingIdRef.current);
+      pollingIdRef.current = null;
     }
-  }, [pollingId]);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pollingIdRef.current) {
+        clearInterval(pollingIdRef.current);
+      }
+    };
+  }, []);
 
   return { ...state, startPolling, stopPolling, poll };
 }

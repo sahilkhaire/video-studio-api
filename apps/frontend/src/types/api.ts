@@ -1,33 +1,67 @@
 // Job and Video Generation Types
 export interface GenerateVideoRequest {
   topic: string;
-  duration?: number;
+  platform: 'youtube' | 'instagram_reels' | 'tiktok';
   style?: string;
-  provider?: string;
+  targetDuration: number;
+  targetAudience?: string;
+  additionalContext?: string;
+  resolution?: '480p' | '720p' | '1080p';
+  aspectRatio?: '16:9' | '9:16' | '1:1';
+  fps?: number;
+  voice?: string;
+  showCaptions?: boolean;
+  callbackUrl?: string;
 }
 
 export interface GenerateFromImagesRequest {
-  imageUrls: string[];
-  duration?: number;
-  ttsProvider?: string;
-  ttsVoice?: string;
+  data: Array<{
+    content: string;
+    images: string[];
+  }>;
+  showCaptions?: boolean;
+  showCaption?: boolean;
+  voice?: string;
+  style?: string;
+  resolution?: '480p' | '720p' | '1080p';
+  aspectRatio?: '16:9' | '9:16' | '1:1';
+  fps?: number;
+  callbackUrl?: string;
 }
 
 export interface GenerateMusicVideoRequest {
-  musicFile: File;
-  prompt?: string;
-  duration?: number;
+  topic: string;
+  lyrics?: string;
+  musicFile?: File;
+  musicPath?: string;
+  musicUrl?: string;
+  additionalContext?: string;
+  style?: string;
+  scriptProvider?: string;
+  imageProvider?: string;
+  imageModel?: string;
+  youtubeResolution?: '480p' | '720p' | '1080p';
+  reelsResolution?: '480p' | '720p' | '1080p';
+  fps?: number;
+  callbackUrl?: string;
 }
 
 export interface VideoJob {
   jobId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status:
+    | 'pending'
+    | 'processing'
+    | 'completed'
+    | 'failed'
+    | 'waiting'
+    | 'active'
+    | 'delayed';
   progress?: number;
   error?: string;
   result?: {
-    videoUrl: string;
-    duration: number;
-    size: number;
+    videoUrl?: string;
+    duration?: number;
+    size?: number;
   };
   createdAt: string;
   updatedAt: string;
