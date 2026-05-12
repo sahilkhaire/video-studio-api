@@ -21,7 +21,7 @@ import { CostTrackingService } from '../cost/cost-tracking.service';
 import { ContentType } from '../../domain/interfaces/cost-tracking.interface';
 import { CacheKeyService } from '../cache/cache-key.service';
 import { ContentCacheService } from '../cache/content-cache.service';
-import { ImageProvider, ScriptProvider } from '../../config/providers.config';
+import { ImageProvider, ScriptProvider, TTSProvider } from '../../config/providers.config';
 import { ProviderResolverService } from './provider-resolver.service';
 
 export interface ISceneAssets {
@@ -156,7 +156,19 @@ export class ContentService {
   }
 
   async generateAudio(request: GenerateAudioRequestDto): Promise<IGeneratedAudio> {
-    const cacheKey = this.cacheKeyService.forAudio(request);
+    return this.generateAudioWithProvider(request);
+  }
+
+  async generateAudioWithProvider(
+    request: GenerateAudioRequestDto,
+    providerOverride?: TTSProvider,
+  ): Promise<IGeneratedAudio> {
+    const resolvedProvider = this.providerResolverService.resolveTtsProvider(
+      providerOverride,
+      this.ttsProvider,
+    );
+    const providerName = resolvedProvider.getProviderName();
+    const cacheKey = this.cacheKeyService.forAudio({ ...request, _provider: providerName });
     const cached = await this.contentCacheService.get<IGeneratedAudio>(cacheKey);
     if (cached) {
       if (await this.fileExists(cached.filePath)) {
@@ -171,9 +183,8 @@ export class ContentService {
     }
 
     const start = Date.now();
-    const providerName = this.ttsProvider.getProviderName();
     try {
-      const result = await this.ttsProvider.generateAudio(request);
+      const result = await resolvedProvider.generateAudio(request);
       this.costTrackingService.recordCall({
         provider: providerName,
         contentType: ContentType.AUDIO,
@@ -207,10 +218,15 @@ export class ContentService {
     request: GenerateScriptRequestDto,
     voice?: string,
     aspectRatio: VideoAspectRatio = VideoAspectRatio.LANDSCAPE_16_9,
+    providerOverrides?: {
+      scriptProvider?: ScriptProvider;
+      imageProvider?: ImageProvider;
+      ttsProvider?: TTSProvider;
+    },
   ): Promise<IGeneratedContent> {
     this.logger.log(`Starting video content generation for: "${request.topic}"`);
 
-    const script = await this.generateScript(request);
+    const script = await this.generateScriptWithProvider(request, providerOverrides?.scriptProvider);
     this.logger.log(`Script generated: "${script.title}" with ${script.scenes.length} scenes`);
 
     const maxConcurrentScenes = Math.max(
@@ -225,6 +241,8 @@ export class ContentService {
       maxConcurrentScenes,
       voice,
       imageSize,
+      providerOverrides?.imageProvider,
+      providerOverrides?.ttsProvider,
     );
 
     this.logger.log(`Content generation complete for: "${script.title}"`);
@@ -232,9 +250,15 @@ export class ContentService {
     return {
       script,
       sceneAssets,
-      scriptProvider: this.scriptGenerator.getProviderName(),
-      imageProvider: this.imageGenerator.getProviderName(),
-      audioProvider: this.ttsProvider.getProviderName(),
+      scriptProvider: this.providerResolverService
+        .resolveScriptProvider(providerOverrides?.scriptProvider, this.scriptGenerator)
+        .getProviderName(),
+      imageProvider: this.providerResolverService
+        .resolveImageProvider(providerOverrides?.imageProvider, this.imageGenerator)
+        .getProviderName(),
+      audioProvider: this.providerResolverService
+        .resolveTtsProvider(providerOverrides?.ttsProvider, this.ttsProvider)
+        .getProviderName(),
       generatedAt: new Date(),
     };
   }
@@ -246,10 +270,12 @@ export class ContentService {
     narration: string,
     voice?: string,
     imageSize?: ImageSize,
+    imageProviderOverride?: ImageProvider,
+    ttsProviderOverride?: TTSProvider,
   ): Promise<ISceneAssets> {
     const [imageResult, audioResult] = await Promise.allSettled([
-      this.generateImage({ prompt: imageDescription, size: imageSize }),
-      this.generateAudio({ text: narration, voice }),
+      this.generateImageWithProvider({ prompt: imageDescription, size: imageSize }, imageProviderOverride),
+      this.generateAudioWithProvider({ text: narration, voice }, ttsProviderOverride),
     ]);
 
     const sceneAsset: ISceneAssets = { sceneId, sequenceNumber };
@@ -280,6 +306,8 @@ export class ContentService {
     maxConcurrentScenes: number,
     voice?: string,
     imageSize?: ImageSize,
+    imageProviderOverride?: ImageProvider,
+    ttsProviderOverride?: TTSProvider,
   ): Promise<ISceneAssets[]> {
     const results: ISceneAssets[] = new Array(script.scenes.length);
     let cursor = 0;
@@ -301,6 +329,8 @@ export class ContentService {
           scene.narration,
           voice,
           imageSize,
+          imageProviderOverride,
+          ttsProviderOverride,
         );
       }
     };
@@ -322,8 +352,16 @@ export class ContentService {
     };
   }
 
-  getTtsVoices(): Promise<ITTSVoice[]> {
-    return this.ttsProvider.getVoices();
+  getTtsVoices(providerOverride?: TTSProvider): Promise<ITTSVoice[]> {
+    return this.providerResolverService
+      .resolveTtsProvider(providerOverride, this.ttsProvider)
+      .getVoices();
+  }
+
+  getResolvedTtsProviderName(providerOverride?: TTSProvider): string {
+    return this.providerResolverService
+      .resolveTtsProvider(providerOverride, this.ttsProvider)
+      .getProviderName();
   }
 
   private async fileExists(filePath: string | undefined): Promise<boolean> {

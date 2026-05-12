@@ -12,8 +12,24 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IntersectionType } from '@nestjs/swagger';
 import { GenerateScriptRequestDto } from './generate-script.dto';
 import { VideoResolution, VideoAspectRatio } from '../interfaces/rendering.interface';
+import { ImageProvider, ScriptProvider, TTSProvider } from '../../config/providers.config';
 
 export class GenerateVideoRequestDto extends IntersectionType(GenerateScriptRequestDto) {
+  @ApiPropertyOptional({ enum: ScriptProvider, description: 'Override script generation provider' })
+  @IsEnum(ScriptProvider)
+  @IsOptional()
+  scriptProvider?: ScriptProvider;
+
+  @ApiPropertyOptional({ enum: ImageProvider, description: 'Override image generation provider' })
+  @IsEnum(ImageProvider)
+  @IsOptional()
+  imageProvider?: ImageProvider;
+
+  @ApiPropertyOptional({ enum: TTSProvider, description: 'Override text-to-speech provider' })
+  @IsEnum(TTSProvider)
+  @IsOptional()
+  ttsProvider?: TTSProvider;
+
   @ApiPropertyOptional({
     enum: VideoResolution,
     description: 'Output video resolution',

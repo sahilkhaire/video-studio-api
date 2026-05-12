@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { apiClient } from "../api/client"
 import { useProviderSelection } from "@/hooks/useProviderSelection"
@@ -23,6 +22,7 @@ import {
   GenerateFromImagesRequest,
   GenerateMusicVideoRequest,
   GenerateVideoRequest,
+  TTSVoice,
   VideoJob,
 } from "../types/api"
 
@@ -52,10 +52,8 @@ const ValidationErrors = {
 
 export default function GenerateVideoPage({
   initialTab = "standard",
-  onTabChange,
 }: {
   initialTab?: GenerationType
-  onTabChange?: (tab: GenerationType) => void
 }) {
   // Load dynamic provider configuration
   const {
@@ -154,6 +152,8 @@ export default function GenerateVideoPage({
   const [lastMode, setLastMode] = useState<GenerationType | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [ttsVoices, setTtsVoices] = useState<TTSVoice[]>([])
+  const [ttsVoicesLoading, setTtsVoicesLoading] = useState(false)
 
   // Auto-poll job status
   useEffect(() => {
@@ -190,6 +190,23 @@ export default function GenerateVideoPage({
       setMusicRequest((prev) => ({ ...prev, imageProvider }))
     }
   }, [imageProvider])
+
+  useEffect(() => {
+    const fetchVoices = async () => {
+      try {
+        setTtsVoicesLoading(true)
+        const voices = await apiClient.getTTSVoices(ttsProvider || undefined)
+        setTtsVoices(voices)
+      } catch (err) {
+        console.error("Failed to load TTS voices:", err)
+        setTtsVoices([])
+      } finally {
+        setTtsVoicesLoading(false)
+      }
+    }
+
+    fetchVoices()
+  }, [ttsProvider])
 
   const updateStandard = <K extends keyof GenerateVideoRequest>(
     key: K,
@@ -315,6 +332,9 @@ export default function GenerateVideoPage({
     try {
       const result = await apiClient.generateVideo({
         ...standardRequest,
+        scriptProvider: scriptProvider || undefined,
+        imageProvider: imageProvider || undefined,
+        ttsProvider: ttsProvider || undefined,
         targetAudience: standardRequest.targetAudience?.trim() || undefined,
         additionalContext: standardRequest.additionalContext?.trim() || undefined,
         voice: standardRequest.voice?.trim() || undefined,
@@ -340,6 +360,7 @@ export default function GenerateVideoPage({
     try {
       const result = await apiClient.generateFromContentImages({
         ...contentImagesRequest,
+        ttsProvider: ttsProvider || undefined,
         voice: contentImagesRequest.voice?.trim() || undefined,
         callbackUrl: contentImagesRequest.callbackUrl?.trim() || undefined,
       })
@@ -407,13 +428,6 @@ export default function GenerateVideoPage({
     setError(null)
   }
 
-  const handleTabChange = (value: string) => {
-    const nextTab = value as GenerationType
-    setActiveTab(nextTab)
-    setValidationErrors({})
-    onTabChange?.(nextTab)
-  }
-
   const parsedContentImageCount = contentImageSegments.reduce((total, segment) => {
     const parsedCount = segment.imagesText
       .split(/\n|,/)
@@ -432,6 +446,158 @@ export default function GenerateVideoPage({
   const hasMusicSource =
     !!musicRequest.musicFile || !!musicRequest.musicPath?.trim() || !!musicRequest.musicUrl?.trim()
 
+  const renderProviderConfiguration = (
+    idPrefix: string,
+    options: { script?: boolean; image?: boolean; tts?: boolean }
+  ) => {
+    const includeScript = options.script === true
+    const includeImage = options.image === true
+    const includeTts = options.tts === true
+    const columns = [includeScript, includeImage, includeTts].filter(Boolean).length
+
+    if (providersLoading) {
+      return (
+        <div className="flex items-center justify-center gap-2 rounded-lg border p-6">
+          <Loader className="w-5 h-5 animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading providers...</span>
+        </div>
+      )
+    }
+
+    return (
+      <div className={`grid gap-4 ${columns >= 3 ? "md:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
+        {includeScript ? (
+        <div className="rounded-lg border border-blue-200 bg-linear-to-br from-blue-50 to-transparent p-4 dark:border-blue-800 dark:from-blue-950 dark:to-transparent">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-xs font-semibold text-blue-600 dark:bg-blue-900 dark:text-blue-400">
+              AI
+            </div>
+            <h3 className="text-sm font-semibold">LLM</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor={`${idPrefix}-llm-provider`} className="text-xs font-medium text-muted-foreground">Provider</Label>
+              <Select value={scriptProvider || ""} onValueChange={setScriptProvider}>
+                <SelectTrigger id={`${idPrefix}-llm-provider`} className="h-9 text-sm">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scriptProviders.map((provider) => (
+                    <SelectItem key={provider.name} value={provider.name}>
+                      {provider.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`${idPrefix}-llm-model`} className="text-xs font-medium text-muted-foreground">Model</Label>
+              <Select value={scriptModel || ""} onValueChange={setScriptModel}>
+                <SelectTrigger id={`${idPrefix}-llm-model`} className="h-9 text-sm">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scriptModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        ) : null}
+
+        {includeImage ? (
+        <div className="rounded-lg border border-purple-200 bg-linear-to-br from-purple-50 to-transparent p-4 dark:border-purple-800 dark:from-purple-950 dark:to-transparent">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 text-xs font-semibold text-purple-600 dark:bg-purple-900 dark:text-purple-400">
+              IMG
+            </div>
+            <h3 className="text-sm font-semibold">Images</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor={`${idPrefix}-image-provider`} className="text-xs font-medium text-muted-foreground">Provider</Label>
+              <Select value={imageProvider || ""} onValueChange={setImageProvider}>
+                <SelectTrigger id={`${idPrefix}-image-provider`} className="h-9 text-sm">
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {imageProviders.map((provider) => (
+                    <SelectItem key={provider.name} value={provider.name}>
+                      {provider.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`${idPrefix}-image-model`} className="text-xs font-medium text-muted-foreground">Model</Label>
+              <Select value={imageModel || ""} onValueChange={setImageModel}>
+                <SelectTrigger id={`${idPrefix}-image-model`} className="h-9 text-sm">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {imageModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        ) : null}
+
+        {includeTts ? (
+          <div className="rounded-lg border border-green-200 bg-linear-to-br from-green-50 to-transparent p-4 dark:border-green-800 dark:from-green-950 dark:to-transparent">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-100 text-xs font-semibold text-green-600 dark:bg-green-900 dark:text-green-400">
+                TTS
+              </div>
+              <h3 className="text-sm font-semibold">Voice</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor={`${idPrefix}-tts-provider`} className="text-xs font-medium text-muted-foreground">Provider</Label>
+                <Select value={ttsProvider || ""} onValueChange={setTtsProvider}>
+                  <SelectTrigger id={`${idPrefix}-tts-provider`} className="h-9 text-sm">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ttsProviders.map((provider) => (
+                      <SelectItem key={provider.name} value={provider.name}>
+                        {provider.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor={`${idPrefix}-tts-model`} className="text-xs font-medium text-muted-foreground">Model</Label>
+                <Select value={ttsModel || ""} onValueChange={setTtsModel}>
+                  <SelectTrigger id={`${idPrefix}-tts-model`} className="h-9 text-sm">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ttsModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <PageShell
       title="Generate Video"
@@ -440,158 +606,7 @@ export default function GenerateVideoPage({
         <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
           {/* Left Side - Form */}
           <div className="space-y-4">
-        {/* Provider Selection Section */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">AI Provider Configuration</CardTitle>
-            <CardDescription className="text-xs">Select the AI providers and models for your video generation</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {providersLoading ? (
-              <div className="flex items-center justify-center gap-2 py-12">
-                <Loader className="w-5 h-5 animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading providers...</span>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-3">
-                {/* LLM / Script Provider */}
-                <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-linear-to-br from-blue-50 to-transparent dark:from-blue-950 dark:to-transparent p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                      AI
-                    </div>
-                    <h3 className="font-semibold text-sm">LLM</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="llm-provider" className="text-xs font-medium text-muted-foreground">Provider</Label>
-                      <Select value={scriptProvider || ""} onValueChange={setScriptProvider}>
-                        <SelectTrigger id="llm-provider" className="text-sm h-9">
-                          <SelectValue placeholder="Select provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {scriptProviders.map((provider) => (
-                            <SelectItem key={provider.name} value={provider.name}>
-                              {provider.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="llm-model" className="text-xs font-medium text-muted-foreground">Model</Label>
-                      <Select value={scriptModel || ""} onValueChange={setScriptModel}>
-                        <SelectTrigger id="llm-model" className="text-sm h-9">
-                          <SelectValue placeholder="Select model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {scriptModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image Provider */}
-                <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-linear-to-br from-purple-50 to-transparent dark:from-purple-950 dark:to-transparent p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-md bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-purple-600 dark:text-purple-400 font-semibold text-xs">
-                      🖼
-                    </div>
-                    <h3 className="font-semibold text-sm">Images</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="image-provider" className="text-xs font-medium text-muted-foreground">Provider</Label>
-                      <Select value={imageProvider || ""} onValueChange={setImageProvider}>
-                        <SelectTrigger id="image-provider" className="text-sm h-9">
-                          <SelectValue placeholder="Select provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {imageProviders.map((provider) => (
-                            <SelectItem key={provider.name} value={provider.name}>
-                              {provider.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="image-model" className="text-xs font-medium text-muted-foreground">Model</Label>
-                      <Select value={imageModel || ""} onValueChange={setImageModel}>
-                        <SelectTrigger id="image-model" className="text-sm h-9">
-                          <SelectValue placeholder="Select model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {imageModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* TTS Provider */}
-                <div className="rounded-lg border border-green-200 dark:border-green-800 bg-linear-to-br from-green-50 to-transparent dark:from-green-950 dark:to-transparent p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-md bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 font-semibold text-xs">
-                      🔊
-                    </div>
-                    <h3 className="font-semibold text-sm">Voice</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="tts-provider" className="text-xs font-medium text-muted-foreground">Provider</Label>
-                      <Select value={ttsProvider || ""} onValueChange={setTtsProvider}>
-                        <SelectTrigger id="tts-provider" className="text-sm h-9">
-                          <SelectValue placeholder="Select provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ttsProviders.map((provider) => (
-                            <SelectItem key={provider.name} value={provider.name}>
-                              {provider.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="tts-model" className="text-xs font-medium text-muted-foreground">Model</Label>
-                      <Select value={ttsModel || ""} onValueChange={setTtsModel}>
-                        <SelectTrigger id="tts-model" className="text-sm h-9">
-                          <SelectValue placeholder="Select model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ttsModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit sm:flex-nowrap">
-            <TabsTrigger value="standard">Standard</TabsTrigger>
-            <TabsTrigger value="content-images">Content + Images</TabsTrigger>
-            <TabsTrigger value="music-story">Music Story</TabsTrigger>
-          </TabsList>
-
-        <TabsContent value="standard">
+        {activeTab === "standard" ? (
           <Card>
             <CardHeader>
               <CardTitle>Standard Scripted Generation (POST /videos/generate)</CardTitle>
@@ -793,15 +808,42 @@ export default function GenerateVideoPage({
                               <span className="text-xs text-destructive">{validationErrors.voice}</span>
                             )}
                           </div>
-                          <Input
-                            id="standard-voice"
-                            maxLength={100}
-                            value={standardRequest.voice}
-                            onChange={(e) => updateStandard("voice", e.target.value)}
-                            placeholder="e.g., en-IN-NeerjaNeural"
-                            className={validationErrors.voice ? "border-destructive" : ""}
-                          />
+                          {ttsVoices.length > 0 ? (
+                            <Select
+                              value={standardRequest.voice || ""}
+                              onValueChange={(value) => updateStandard("voice", value)}
+                            >
+                              <SelectTrigger id="standard-voice" className={validationErrors.voice ? "border-destructive" : ""}>
+                                <SelectValue placeholder={ttsVoicesLoading ? "Loading voices..." : "Select a voice"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ttsVoices.map((voice) => (
+                                  <SelectItem key={voice.id} value={voice.id}>
+                                    {voice.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              id="standard-voice"
+                              maxLength={100}
+                              value={standardRequest.voice}
+                              onChange={(e) => updateStandard("voice", e.target.value)}
+                              placeholder="e.g., en-IN-NeerjaNeural"
+                              className={validationErrors.voice ? "border-destructive" : ""}
+                            />
+                          )}
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">AI Tool Configuration</Label>
+                        {renderProviderConfiguration("standard-ai", {
+                          script: true,
+                          image: true,
+                          tts: true,
+                        })}
                       </div>
 
                       <div className="space-y-2">
@@ -864,9 +906,9 @@ export default function GenerateVideoPage({
               </form>
             </CardContent>
           </Card>
-        </TabsContent>
+        ) : null}
 
-        <TabsContent value="content-images">
+        {activeTab === "content-images" ? (
           <Card>
             <CardHeader>
               <CardTitle>Content + Images (POST /videos/generate-from-content-images)</CardTitle>
@@ -1090,12 +1132,30 @@ export default function GenerateVideoPage({
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="content-voice">Voice</Label>
-                          <Input
-                            id="content-voice"
-                            value={contentImagesRequest.voice}
-                            onChange={(e) => updateContentImages("voice", e.target.value)}
-                            placeholder="e.g., en-IN-NeerjaNeural"
-                          />
+                          {ttsVoices.length > 0 ? (
+                            <Select
+                              value={contentImagesRequest.voice || ""}
+                              onValueChange={(value) => updateContentImages("voice", value)}
+                            >
+                              <SelectTrigger id="content-voice">
+                                <SelectValue placeholder={ttsVoicesLoading ? "Loading voices..." : "Select a voice"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ttsVoices.map((voice) => (
+                                  <SelectItem key={voice.id} value={voice.id}>
+                                    {voice.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              id="content-voice"
+                              value={contentImagesRequest.voice}
+                              onChange={(e) => updateContentImages("voice", e.target.value)}
+                              placeholder="e.g., en-IN-NeerjaNeural"
+                            />
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="content-callback">Callback URL</Label>
@@ -1107,6 +1167,13 @@ export default function GenerateVideoPage({
                             placeholder="https://example.com/webhook"
                           />
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">AI Tool Configuration</Label>
+                        {renderProviderConfiguration("content-ai", {
+                          tts: true,
+                        })}
                       </div>
                     </div>
                   )}
@@ -1127,9 +1194,9 @@ export default function GenerateVideoPage({
               </form>
             </CardContent>
           </Card>
-        </TabsContent>
+        ) : null}
 
-        <TabsContent value="music-story">
+        {activeTab === "music-story" ? (
           <Card>
             <CardHeader>
               <CardTitle>Music Visual Story (POST /videos/generate-music-story)</CardTitle>
@@ -1262,113 +1329,9 @@ export default function GenerateVideoPage({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="music-script-provider">Script Provider</Label>
-                    {providersLoading ? (
-                      <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Loading providers...
-                      </div>
-                    ) : (
-                      <Select
-                        value={scriptProvider || ""}
-                        onValueChange={setScriptProvider}
-                      >
-                        <SelectTrigger id="music-script-provider">
-                          <SelectValue placeholder="Select script provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {scriptProviders.map((provider) => (
-                            <SelectItem key={provider.name} value={provider.name}>
-                              {provider.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="music-script-model">Script Model</Label>
-                    {providersLoading ? (
-                      <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Loading models...
-                      </div>
-                    ) : (
-                      <Select
-                        value={scriptModel || ""}
-                        onValueChange={setScriptModel}
-                      >
-                        <SelectTrigger id="music-script-model">
-                          <SelectValue placeholder="Select script model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {scriptModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="music-image-provider">Image Provider</Label>
-                    {providersLoading ? (
-                      <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Loading providers...
-                      </div>
-                    ) : (
-                      <Select
-                        value={imageProvider || ""}
-                        onValueChange={setImageProvider}
-                      >
-                        <SelectTrigger id="music-image-provider">
-                          <SelectValue placeholder="Select image provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {imageProviders.map((provider) => (
-                            <SelectItem key={provider.name} value={provider.name}>
-                              {provider.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="music-image-model">Image Model</Label>
-                    {providersLoading ? (
-                      <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Loading models...
-                      </div>
-                    ) : (
-                      <Select
-                        value={imageModel || ""}
-                        onValueChange={setImageModel}
-                      >
-                        <SelectTrigger id="music-image-model">
-                          <SelectValue placeholder="Select image model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {imageModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.displayName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="music-youtube-resolution">YouTube Resolution</Label>
                     <Select
@@ -1435,6 +1398,14 @@ export default function GenerateVideoPage({
                   {expandAdvanced["music-story"] && (
                     <div className="space-y-4 mt-4">
                       <div className="space-y-2">
+                        <Label className="text-sm font-medium">AI Provider Configuration</Label>
+                        {renderProviderConfiguration("music-ai", {
+                          script: true,
+                          image: true,
+                        })}
+                      </div>
+
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="music-additional-context">Additional Context {musicRequest.additionalContext.length}/500</Label>
                           {validationErrors.context && (
@@ -1495,8 +1466,7 @@ export default function GenerateVideoPage({
               </form>
             </CardContent>
           </Card>
-        </TabsContent>
-        </Tabs>
+        ) : null}
 
           </div>
 

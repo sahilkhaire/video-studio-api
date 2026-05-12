@@ -1,6 +1,6 @@
 import { VideoPlatform, VideoStyle } from '../enums/video.enums';
 import { VideoResolution, VideoAspectRatio } from './rendering.interface';
-import { ScriptProvider, ImageProvider } from '../../config/providers.config';
+import { ScriptProvider, ImageProvider, TTSProvider } from '../../config/providers.config';
 
 // ──────────────────────────────────────────────────────────
 // Job status
@@ -32,6 +32,9 @@ export interface IVideoJobData {
   resolution?: VideoResolution;
   aspectRatio?: VideoAspectRatio;
   fps?: number;
+  scriptProvider?: ScriptProvider;
+  imageProvider?: ImageProvider;
+  ttsProvider?: TTSProvider;
   callbackUrl?: string;
 }
 

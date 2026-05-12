@@ -17,6 +17,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { VideoStyle } from '../enums/video.enums';
 import { VideoAspectRatio, VideoResolution } from '../interfaces/rendering.interface';
+import { TTSProvider } from '../../config/providers.config';
 
 export class ContentImageSegmentDto {
   @ApiProperty({
@@ -79,6 +80,14 @@ export class GenerateContentImagesVideoRequestDto {
   @IsString()
   @MaxLength(100)
   voice?: string;
+
+  @ApiPropertyOptional({
+    enum: TTSProvider,
+    description: 'Override text-to-speech provider for narration generation',
+  })
+  @IsOptional()
+  @IsEnum(TTSProvider)
+  ttsProvider?: TTSProvider;
 
   @ApiPropertyOptional({
     enum: VideoStyle,

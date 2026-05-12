@@ -537,8 +537,10 @@ class APIClient {
   }
 
   // TTS Voices endpoint
-  async getTTSVoices(): Promise<TTSVoice[]> {
-    const { data } = await this.client.get('/videos/tts-voices');
+  async getTTSVoices(provider?: string): Promise<TTSVoice[]> {
+    const { data } = await this.client.get('/videos/tts-voices', {
+      params: provider ? { provider } : undefined,
+    });
     return data;
   }
 

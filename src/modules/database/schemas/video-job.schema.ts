@@ -63,6 +63,9 @@ export class VideoJob {
   @Prop()
   imageModel?: string;
 
+  @Prop()
+  ttsProvider?: string;
+
   // ── Lifecycle ─────────────────────────────────────────────────────
   @Prop({ required: true, enum: VideoJobStatus, default: VideoJobStatus.WAITING, index: true })
   status!: VideoJobStatus;

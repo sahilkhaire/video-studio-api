@@ -30,8 +30,8 @@ import {
 } from '../../domain/interfaces/video-job.interface';
 import { ISceneAssets } from '../content/content.service';
 import { IVideoScript } from '../../domain/interfaces/script-generator.interface';
-import { EdgeTTSProvider } from '../content/providers/tts/edge-tts.provider';
 import { PROVIDERS_MODELS_CONFIG, ProvidersCatalogResponse } from '../../config/provider-models.config';
+import { TTSProvider } from '../../config/providers.config';
 
 export interface IVideoGenerationResult {
   video: IRenderedVideo;
@@ -100,6 +100,11 @@ export class VideoService {
       request,
       request.voice,
       aspectRatio,
+      {
+        scriptProvider: request.scriptProvider,
+        imageProvider: request.imageProvider,
+        ttsProvider: request.ttsProvider,
+      },
     );
 
     this.logger.log(
@@ -143,13 +148,12 @@ export class VideoService {
       `Content-image video generation started — segments: ${request.data.length}, resolution: ${resolution}, aspectRatio: ${aspectRatio}`,
     );
 
-    const edgeTtsProvider = new EdgeTTSProvider(this.configService);
     const generatedAudio = await Promise.all(
       request.data.map((segment) =>
-        edgeTtsProvider.generateAudio({
+        this.contentService.generateAudioWithProvider({
           text: segment.content,
           voice: request.voice,
-        }),
+        }, request.ttsProvider),
       ),
     );
     const segmentAudio = await Promise.all(
@@ -244,7 +248,7 @@ export class VideoService {
         totalScenes: scenes.length,
         scriptProvider: 'user-input',
         imageProvider: 'user-input',
-        audioProvider: edgeTtsProvider.getProviderName(),
+        audioProvider: this.contentService.getResolvedTtsProviderName(request.ttsProvider),
         generatedAt,
       };
     } finally {
@@ -263,8 +267,8 @@ export class VideoService {
     };
   }
 
-  getTtsVoices(): Promise<ITTSVoice[]> {
-    return this.contentService.getTtsVoices();
+  getTtsVoices(providerOverride?: TTSProvider): Promise<ITTSVoice[]> {
+    return this.contentService.getTtsVoices(providerOverride);
   }
 
   async notifyCallback(callbackUrl: string, payload: Record<string, unknown>): Promise<void> {

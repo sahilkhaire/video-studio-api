@@ -111,6 +111,9 @@ export class VideoProcessor implements OnModuleInit, OnModuleDestroy {
       resolution: standardData.resolution,
       aspectRatio: standardData.aspectRatio,
       fps: standardData.fps,
+      scriptProvider: standardData.scriptProvider,
+      imageProvider: standardData.imageProvider,
+      ttsProvider: standardData.ttsProvider,
     };
 
     await job.updateProgress(10);

@@ -149,10 +149,7 @@ function App() {
                 {currentView === "overview" && <DashboardOverview />}
                 {currentView === "generate" && (
                   <div className="px-4 lg:px-6">
-                    <GenerateVideoPage
-                      initialTab={currentCreateMode}
-                      onTabChange={handleCreateModeChange}
-                    />
+                    <GenerateVideoPage initialTab={currentCreateMode} />
                   </div>
                 )}
                 {currentView === "jobs" && (

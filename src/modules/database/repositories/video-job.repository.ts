@@ -29,6 +29,9 @@ export class VideoJobRepository {
       resolution: data.resolution,
       aspectRatio: data.aspectRatio,
       fps: data.fps,
+      scriptProvider: data.scriptProvider,
+      imageProvider: data.imageProvider,
+      ttsProvider: data.ttsProvider,
       status: VideoJobStatus.WAITING,
       progress: 0,
     });

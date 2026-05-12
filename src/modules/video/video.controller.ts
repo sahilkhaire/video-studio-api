@@ -36,6 +36,7 @@ import {
 import { ITTSVoice } from '../../domain/interfaces/tts-provider.interface';
 import { IMongoDetailsResponse, IVideoGenerationResult } from './video.service';
 import { VideoResolution } from '../../domain/interfaces/rendering.interface';
+import { TTSProvider } from '../../config/providers.config';
 
 interface IProvidersResponse {
   script: string;
@@ -73,6 +74,9 @@ export class VideoController {
       resolution: dto.resolution,
       aspectRatio: dto.aspectRatio,
       fps: dto.fps,
+      scriptProvider: dto.scriptProvider,
+      imageProvider: dto.imageProvider,
+      ttsProvider: dto.ttsProvider,
       callbackUrl: dto.callbackUrl,
     });
   }
@@ -196,8 +200,8 @@ export class VideoController {
       'Returns all voices supported by the currently configured TTS provider. Indian voices are flagged with indian: true.',
   })
   @ApiResponse({ status: 200, description: 'Voice list returned' })
-  async getTtsVoices(): Promise<ITTSVoice[]> {
-    return this.videoService.getTtsVoices();
+  async getTtsVoices(@Query('provider') provider?: TTSProvider): Promise<ITTSVoice[]> {
+    return this.videoService.getTtsVoices(provider);
   }
 
   @Get('mongo-details')

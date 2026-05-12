@@ -9,6 +9,9 @@ export interface GenerateVideoRequest {
   resolution?: '480p' | '720p' | '1080p';
   aspectRatio?: '16:9' | '9:16' | '1:1';
   fps?: number;
+  scriptProvider?: string;
+  imageProvider?: string;
+  ttsProvider?: string;
   voice?: string;
   showCaptions?: boolean;
   callbackUrl?: string;
@@ -26,6 +29,7 @@ export interface GenerateFromImagesRequest {
   resolution?: '480p' | '720p' | '1080p';
   aspectRatio?: '16:9' | '9:16' | '1:1';
   fps?: number;
+  ttsProvider?: string;
   callbackUrl?: string;
 }
 
